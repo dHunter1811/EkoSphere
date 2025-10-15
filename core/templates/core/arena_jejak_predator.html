@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container text-dark mt-4">
+    <div class="card mx-auto" style="max-width: 700px;">
+        <div class="card-header bg-info">
+            <h2 id="judul-cerita">Jejak Predator</h2>
+        </div>
+        <div class="card-body">
+            <blockquote class="blockquote">
+                <p id="isi-cerita" class="fs-5">Memuat cerita...</p>
+            </blockquote>
+            <hr>
+            <h4 id="pertanyaan" class="mt-4">Memuat pertanyaan...</h4>
+            <div id="pilihan-container" class="d-grid gap-2 mt-3">
+                </div>
+            <div id="hasil-feedback" class="alert mt-3 d-none"></div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ... (script Anda yang sudah ada tidak perlu diubah) ...
+    document.addEventListener('DOMContentLoaded', function() {
+        const ceritaData = {{ cerita_json|safe }};
+        const pertanyaanId = {{ pertanyaan_id }};
+
+        if (ceritaData) {
+            document.getElementById('judul-cerita').innerText = ceritaData.judul;
+            document.getElementById('isi-cerita').innerText = ceritaData.cerita;
+            document.getElementById('pertanyaan').innerText = ceritaData.pertanyaan;
+
+            const pilihanContainer = document.getElementById('pilihan-container');
+            const feedbackEl = document.getElementById('hasil-feedback');
+
+            ceritaData.pilihan.forEach(pilihan => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-outline-secondary';
+                button.innerText = pilihan;
+                button.onclick = () => cekJawaban(pilihan);
+                pilihanContainer.appendChild(button);
+            });
+
+            function cekJawaban(pilihanPengguna) {
+                const isBenar = (pilihanPengguna === ceritaData.jawaban_benar);
+
+                if (isBenar) {
+                    feedbackEl.className = 'alert alert-success';
+                    feedbackEl.innerText = 'Benar! ' + ceritaData.jawaban_benar + ' adalah predator dalam cerita ini.';
+                } else {
+                    feedbackEl.className = 'alert alert-danger';
+                    feedbackEl.innerText = 'Kurang tepat. Coba pikirkan lagi siapa yang memangsa.';
+                }
+                feedbackEl.classList.remove('d-none');
+                
+                pilihanContainer.querySelectorAll('button').forEach(btn => {
+                    btn.disabled = true;
+                });
+
+                kirimHasilKeServer(isBenar);
+            }
+
+            function kirimHasilKeServer(isBenar) {
+                fetch("{% url 'api_simpan_jawaban' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        'pertanyaan_id': pertanyaanId,
+                        'jawaban_benar': isBenar
+                    })
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}

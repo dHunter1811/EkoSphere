@@ -1,0 +1,60 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container text-dark mt-4">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
+        <h1 class="display-5 fw-bold">Progres Belajar: {{ user.username }}</h1>
+        <p class="fs-4">Total Poin: <span class="badge bg-warning text-dark">{{ profil_siswa.total_poin }} Poin</span></p>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-success mt-2"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
+    </div>
+
+    <h2 class="mb-3"><i class="bi bi-award-fill"></i> Koleksi Lencana</h2>
+    <div class="row">
+        {% for lencana in profil_siswa.lencana.all %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center shadow-sm">
+                    <div class="card-body">
+                        <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" class="mb-2" width="80">
+                        <h5 class="card-title">{{ lencana.nama }}</h5>
+                        <p class="card-text text-muted">{{ lencana.deskripsi }}</p>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col">
+                <p class="text-muted">Anda belum mendapatkan lencana apapun. Teruslah belajar!</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <hr class="my-4">
+
+    <h2 class="mb-3"><i class="bi bi-check2-circle"></i> Riwayat Kuis</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nama Kuis</th>
+                        <th>Skor</th>
+                        <th>Waktu Mengerjakan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hasil in hasil_kuis_list %}
+                    <tr>
+                        <td>{{ hasil.kuis.judul }}</td>
+                        <td><span class="badge bg-primary">{{ hasil.skor|floatformat:0 }}%</span></td>
+                        <td>{{ hasil.waktu_selesai|date:"d M Y, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Anda belum memiliki riwayat kuis.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

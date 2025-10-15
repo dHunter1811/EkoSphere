@@ -1,0 +1,12 @@
+# Virtual Environment
+env/
+venv/
+
+# File database SQLite
+db.sqlite3
+
+# Folder cache Python
+__pycache__/
+
+# File sensitif
+.env

@@ -1,0 +1,25 @@
+body {
+    /* Memasang gambar background */
+    background-image: url('https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+body::before {
+    /* Membuat lapisan gelap semi-transparan di atas background */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Hitam dengan 50% transparansi */
+    z-index: -1;
+}
+
+/* Kustomisasi agar card sedikit transparan */
+.card {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}

@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h2>Hasil {{ kuis.judul }}</h2>
+        </div>
+        <div class="card-body">
+            <h1 class="display-3">Skor Anda: {{ skor|floatformat:0 }}%</h1>
+
+            {% for lencana in lencana_baru %}
+            <div class="alert alert-warning mt-3">
+                <h4>🎉 Selamat! Anda Mendapatkan Lencana Baru! 🎉</h4>
+                <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="80">
+                <p class="lead mt-2"><strong>{{ lencana.nama }}</strong></p>
+                <p>{{ lencana.deskripsi }}</p>
+            </div>
+            {% endfor %}
+
+            <p class="lead mt-3">Anda telah menyelesaikan kuis ini.</p>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Kembali ke Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

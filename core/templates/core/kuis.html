@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ kuis.judul }}</h1>
+    <p>Pilihlah jawaban yang paling tepat.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="list-group">
+            {% for pertanyaan in kuis.pertanyaan.all %}
+                <div class="list-group-item">
+                    <h5 class="mb-3">{{ forloop.counter }}. {{ pertanyaan.teks_pertanyaan }}</h5>
+                    
+                    {% for pilihan in pertanyaan.pilihan.all %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="pertanyaan_{{ pertanyaan.id }}" id="pilihan_{{ pilihan.id }}" value="{{ pilihan.id }}" required>
+                            <label class="form-check-label" for="pilihan_{{ pilihan.id }}">
+                                {{ pilihan.teks_jawaban }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Selesai & Lihat Skor</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
