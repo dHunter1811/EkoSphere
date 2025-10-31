@@ -1,41 +1,40 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card mt-5">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">Registrasi Akun Baru</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 mt-5">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold"><i class="bi bi-person-plus-fill text-success"></i> Buat Akun EkoSphere</h3>
+                        <p class="text-muted">Bergabunglah dalam ekspedisi lahan basah!</p>
+                    </div>
 
-                    {% for field in form %}
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% for field in form %}
                         <div class="mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            <input type="{{ field.field.widget.input_type }}" 
-                                   name="{{ field.name }}" 
-                                   id="{{ field.id_for_label }}" 
-                                   class="form-control">
-                            
-                            {% if field.help_text %}
+                            {{ field }} {% if field.help_text %}
                                 <small class="form-text text-muted">{{ field.help_text|safe }}</small>
                             {% endif %}
                             
                             {% for error in field.errors %}
-                                <div class="alert alert-danger mt-1 p-1">{{ error }}</div>
+                                <div class="alert alert-danger py-1 mt-1">{{ error }}</div>
                             {% endfor %}
                         </div>
-                    {% endfor %}
+                        {% endfor %}
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success">Daftar</button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <a href="{% url 'login' %}">Sudah punya akun? Login di sini.</a>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success">Daftar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <small class="text-muted">Sudah punya akun? <a href="{% url 'login' %}">Login di sini.</a></small>
+                </div>
             </div>
         </div>
     </div>

@@ -1,25 +1,45 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="container mt-5 text-center">
-    <div class="card">
-        <div class="card-header bg-success text-white">
-            <h2>Hasil {{ kuis.judul }}</h2>
-        </div>
-        <div class="card-body">
-            <h1 class="display-3">Skor Anda: {{ skor|floatformat:0 }}%</h1>
-
-            {% for lencana in lencana_baru %}
-            <div class="alert alert-warning mt-3">
-                <h4>🎉 Selamat! Anda Mendapatkan Lencana Baru! 🎉</h4>
-                <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="80">
-                <p class="lead mt-2"><strong>{{ lencana.nama }}</strong></p>
-                <p>{{ lencana.deskripsi }}</p>
+<div class="row justify-content-center text-dark">
+    <div class="col-md-8">
+        <div class="card shadow-lg text-center">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Hasil Kuis: {{ kuis.subtopik.judul }}</h3>
             </div>
-            {% endfor %}
+            <div class="card-body p-5">
+                
+                {% if skor >= 75 %}
+                    <h1 class="display-1 text-success"><i class="bi bi-award-fill"></i></h1>
+                    <h2 class="card-title">Luar Biasa!</h2>
+                {% else %}
+                    <h1 class="display-1 text-warning"><i class="bi bi-emoji-sunglasses-fill"></i></h1>
+                    <h2 class="card-title">Usaha yang Bagus!</h2>
+                {% endif %}
+                
+                <p class="fs-4">Skor Anda:</p>
+                <h1 class="display-2 fw-bold {% if skor >= 75 %}text-success{% else %}text-warning{% endif %}">{{ skor|floatformat:0 }}%</h1>
+                <p class="text-muted">Anda telah menyelesaikan kuis ini.</p>
+                
+                {% if lencana_baru %}
+                    <div class="alert alert-warning mt-4">
+                        <h4 class="alert-heading">Lencana Baru Diraih!</h4>
+                        {% for lencana in lencana_baru %}
+                            <p>Selamat, Anda mendapatkan lencana <strong>{{ lencana.nama }}</strong>!</p>
+                            <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="80">
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-            <p class="lead mt-3">Anda telah menyelesaikan kuis ini.</p>
-            <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Kembali ke Dashboard</a>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-house-door-fill"></i> Kembali ke Dashboard
+                    </a>
+                    <a href="{% url 'subtopik_detail' pk=kuis.subtopik.pk %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-book"></i> Tinjau Materi
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

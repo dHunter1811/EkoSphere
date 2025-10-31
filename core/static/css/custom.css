@@ -1,25 +1,76 @@
+/* ========================================================== */
+/* GAYA DASAR & LATAR BELAKANG                                */
+/* ========================================================== */
+
 body {
-    /* Memasang gambar background */
-    background-image: url('https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    position: relative;
+    /* Mengganti latar belakang dengan gambar baru */
+    background-image: url('https://imgur.com/TZ4ofNV');
+    background-size: cover; /* Membuat gambar menutupi seluruh layar */
+    background-position: center; /* Posisi gambar di tengah */
+    background-attachment: fixed; /* Gambar tidak ikut scroll */
 }
 
-body::before {
-    /* Membuat lapisan gelap semi-transparan di atas background */
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5); /* Hitam dengan 50% transparansi */
-    z-index: -1;
+/* ========================================================== */
+/* GAYA DASAR & FONT                                          */
+/* ========================================================== */
+
+/* Transisi halus untuk semua elemen agar animasi tidak kaku */
+* {
+    transition: all 0.2s ease-in-out;
 }
 
-/* Kustomisasi agar card sedikit transparan */
+/* ========================================================== */
+/* GAYA KOMPONEN KARTU (CARD)                                 */
+/* ========================================================== */
+
+/* Memberikan bayangan yang lebih menonjol secara permanen */
 .card {
-    background-color: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: none !important; /* Menghapus border agar terlihat lebih bersih */
+}
+
+/* Efek bayangan yang lebih kuat dan terangkat saat kursor di atas kartu */
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+/* ========================================================== */
+/* GAYA ELEMEN INTERAKTIF                                     */
+/* ========================================================== */
+
+/* Memberi highlight pada item di daftar materi saat kursor di atasnya */
+.list-group-item-action:hover {
+    background-color: #e9f5f0; /* Warna hijau sangat muda */
+    transform: translateX(5px);
+    color: #000;
+}
+
+/* Gaya khusus untuk item yang aktif agar lebih menonjol */
+.list-group-item.active {
+    background-color: #198754;
+    border-color: #198754;
+    box-shadow: 0 2px 10px rgba(25, 135, 84, 0.4);
+}
+
+/* Efek sedikit membesar dan lebih cerah pada tombol saat kursor di atasnya */
+.btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* Memberi efek "glow" pada input form saat diklik */
+.form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+/* ========================================================== */
+/* GAYA UNTUK STICKY SIDEBAR NAVIGASI                         */
+/* ========================================================== */
+
+.sidebar-container .card {
+    position: -webkit-sticky; /* Untuk browser Safari */
+    position: sticky;
+    top: 90px; /* Jarak dari atas navbar */
 }

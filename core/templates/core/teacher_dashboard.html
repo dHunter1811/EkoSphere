@@ -1,100 +1,102 @@
-{% extends 'core/base.html' %}
-
-{% block content %}
-<div class="p-5 mb-4 bg-dark bg-opacity-50 rounded-3">
-    <h1 class="display-5 fw-bold">Dashboard Guru</h1>
-    <p class="fs-4">Selamat datang, {{ user.username }}. Analisis data progres siswa di bawah ini untuk memandu sesi
-        tatap muka.</p>
-</div>
-
-<div class="row text-dark">
-    <div class="col-lg-8 mb-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Peta Kesulitan Konsep</h4>
-            </div>
-            <div class="card-body">
-                <p>Grafik 5 pertanyaan yang paling sering dijawab salah oleh siswa.</p>
-                <canvas id="kesulitanChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-people-fill"></i> Identifikasi Siswa</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5><i class="bi bi-trophy-fill text-warning"></i> Siswa Berprestasi</h5>
-                        <ul class="list-group list-group-flush">
-                            {% for profil in siswa_berprestasi %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ profil.user.username }}
-                                <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item text-muted">Data belum tersedia.</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h5><i class="bi bi-exclamation-triangle-fill text-danger"></i> Perlu Perhatian</h5>
-                        <ul class="list-group list-group-flush">
-                            {% for profil in siswa_perlu_perhatian %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ profil.user.username }}
-                                <span class="badge bg-danger rounded-pill">{{ profil.total_poin }} Poin</span>
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item text-muted">Data belum tersedia.</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% extends 'core/base.html' %} {% block content %}
+<div class="container-fluid mt-4">
+    <div class="p-4 rounded" style="background-color: #f4f4f4;">
+        <h1 class="display-5 fw-bold">Dashboard Guru</h1>
+        <p class="fs-5">Selamat datang, {{ request.user.username }}. Analisis data progres siswa di bawah ini untuk memandu sesi tatap muka.</p>
     </div>
 
-    <div class="col-lg-4 mb-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-check-circle-fill"></i> Tingkat Penyelesaian</h4>
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">🧠 Peta Kesulitan Konsep</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted small">Grafik 5 pertanyaan yang paling sering dijawab salah oleh siswa.</p>
+                    <ul class="list-group list-group-flush">
+                        {% for soal in peta_kesulitan %}
+                            <li class="list-group-item">
+                                {{ soal.text }} 
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">Belum ada data jawaban salah dari siswa.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
-            <div class="card-body">
-                <p>Persentase siswa yang sudah memulai aktivitas.</p>
-                <div class="progress" style="height: 25px;">
-                    <div class="progress-bar bg-success" role="progressbar"
-                        style="width: {{ persentase_penyelesaian }}%;" aria-valuenow="{{ persentase_penyelesaian }}"
-                        aria-valuemin="0" aria-valuemax="100">
-                        {{ persentase_penyelesaian|floatformat:0 }}%
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">🧑‍🎓 Identifikasi Siswa</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>🏆 Siswa Berprestasi</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for siswa in siswa_berprestasi %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'detail_siswa' siswa.id %}">{{ siswa.username }}</a>
+                                    <span class="badge bg-success rounded-pill">{{ siswa.profile.points }} Poin</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>⚠️ Perlu Perhatian</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for siswa in siswa_perlu_perhatian %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'detail_siswa' siswa.id %}">{{ siswa.username }}</a>
+                                    <span class="badge bg-danger rounded-pill">{{ siswa.profile.points }} Poin</span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                <small class="text-muted">{{ total_siswa }} total siswa terdaftar.</small>
             </div>
+
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h4 class="mb-0"><i class="bi bi-journal-text"></i> Daftar Materi Anda</h4>
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Statistik Kinerja Kelas</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title">Penyelesaian Modul Rata-rata</h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ kpi_avg_completion }}%;" aria-valuenow="{{ kpi_avg_completion }}" aria-valuemin="0" aria-valuemax="100">{{ kpi_avg_completion }}%</div>
+                    </div>
+                    
+                    <h6 class="card-title">Siswa Aktif (7 Hari Terakhir)</h6>
+                    <p class="card-text fs-4 fw-bold">{{ kpi_siswa_aktif }}</Siswa></p>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    {% for materi in daftar_materi %}
-                    <a href="{% url 'subtopik_detail' pk=materi.pk %}" class="list-group-item list-group-item-action">
-                        {{ materi.judul }}
-                    </a>
-                    {% empty %}
-                    <p class="text-muted">Anda belum membuat materi.</p>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📚 Progres Modul Kelas</h5>
+                </div>
+                <div class="card-body">
+                    {% for modul in progres_modul_kelas %}
+                        <div class="mb-3">
+                            <label class="form-label small">{{ modul.nama_materi }}</label>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ modul.persentase }}%;" aria-valuenow="{{ modul.persentase }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ modul.persentase }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ modul.label }}</small>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
+
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // ... (script Chart.js Anda yang sudah ada) ...
-</script>
 {% endblock %}

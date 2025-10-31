@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings  # Ditambahkan untuk settings.AUTH_USER_MODEL
 
 
 # Model Pengguna yang bisa jadi Siswa atau Guru
@@ -72,9 +73,6 @@ class PilihanJawaban(models.Model):
         return f"{self.pertanyaan.teks_pertanyaan[:20]}... -> {self.teks_jawaban}"
 
 
-# Tambahkan model-model ini di core/models.py
-
-
 class Lencana(models.Model):
     nama = models.CharField(max_length=100)
     deskripsi = models.TextField()
@@ -135,3 +133,44 @@ class HasilKuis(models.Model):
 
     def __str__(self):
         return f"{self.siswa.username} - {self.kuis.judul}: {self.skor}%"
+    
+class InfoEkosistem(models.Model):
+    KATEGORI_CHOICES = (
+        ('Fauna', 'Fauna'),
+        ('Flora', 'Flora'),
+    )
+    nama = models.CharField(max_length=100)
+    deskripsi_singkat = models.TextField(max_length=200)
+    gambar_url = models.URLField(max_length=500, help_text="URL gambar dari internet")
+    kategori = models.CharField(max_length=10, choices=KATEGORI_CHOICES)
+
+    class Meta:
+        verbose_name = "Info Ekosistem"
+        verbose_name_plural = "Info Ekosistem"
+
+    def __str__(self):
+        return self.nama
+
+# --- MODEL BARU DITAMBAHKAN DI SINI ---
+
+# MODEL BARU 1: Untuk melacak materi apa yang sudah selesai
+class UserMateriProgress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # Diperbaiki: Menggunakan model 'SubTopik' Anda
+    materi = models.ForeignKey(SubTopik, on_delete=models.CASCADE) 
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Pastikan user tidak bisa menyelesaikan materi yang sama dua kali
+        unique_together = ('user', 'materi')
+
+# MODEL BARU 2: Untuk melacak setiap jawaban di kuis
+class QuizAttemptLog(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # Diperbaiki: Menggunakan model 'Pertanyaan' Anda
+    question = models.ForeignKey(Pertanyaan, on_delete=models.CASCADE) 
+    is_correct = models.BooleanField()
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.question.teks_pertanyaan[:30]} - {self.is_correct}"

@@ -1,32 +1,49 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>{{ kuis.judul }}</h1>
-    <p>Pilihlah jawaban yang paling tepat.</p>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="list-group">
-            {% for pertanyaan in kuis.pertanyaan.all %}
-                <div class="list-group-item">
-                    <h5 class="mb-3">{{ forloop.counter }}. {{ pertanyaan.teks_pertanyaan }}</h5>
+<div class="row justify-content-center text-dark">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Kuis: {{ kuis.subtopik.judul }}</h3>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <p class="text-muted">Pilihlah jawaban yang paling tepat untuk setiap pertanyaan di bawah ini.</p>
+                
+                <form method="post" action="{% url 'kuis' pk=kuis.subtopik.pk %}">
+                    {% csrf_token %}
                     
-                    {% for pilihan in pertanyaan.pilihan.all %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="pertanyaan_{{ pertanyaan.id }}" id="pilihan_{{ pilihan.id }}" value="{{ pilihan.id }}" required>
-                            <label class="form-check-label" for="pilihan_{{ pilihan.id }}">
-                                {{ pilihan.teks_jawaban }}
-                            </label>
+                    {% for pertanyaan in kuis.pertanyaan.all %}
+                    <div class="mb-4">
+                        <p class="fw-bold fs-5">{{ forloop.counter }}. {{ pertanyaan.teks_pertanyaan }}</p>
+                        
+                        <div class="ps-3">
+                            {% for pilihan in pertanyaan.pilihan.all %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" 
+                                       name="pertanyaan_{{ pertanyaan.id }}" 
+                                       value="{{ pilihan.id }}" 
+                                       id="pilihan_{{ pilihan.id }}" 
+                                       required>
+                                <label class="form-check-label" for="pilihan_{{ pilihan.id }}">
+                                    {{ pilihan.teks_jawaban }}
+                                </label>
+                            </div>
+                            {% endfor %}
                         </div>
+                    </div>
+                    <hr>
                     {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
 
-        <div class="d-grid mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">Selesai & Lihat Skor</button>
+                    <div classs="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-check2-circle"></i> Selesai & Kirim Jawaban
+                        </button>
+                    </div>
+                </form>
+
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}

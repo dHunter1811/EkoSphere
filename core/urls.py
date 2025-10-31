@@ -41,4 +41,18 @@ urlpatterns = [
     path("arena/jejak-predator/", views.jejak_predator_view, name="jejak_predator"),
     # URL BARU UNTUK HALAMAN PROGRES SISWA
     path("progres/", views.progres_view, name="progres"),
+
+    # --- URL BARU UNTUK DASHBOARD GURU DITAMBAHKAN DI SINI ---
+    
+    # URL untuk Dashboard Guru
+    path('dashboard-guru/', views.teacher_dashboard_view, name='teacher_dashboard'),
+    
+    # URL untuk melihat detail progres siswa (INTERAKTIF)
+    path('detail-siswa/<int:user_id>/', views.detail_siswa_view, name='detail_siswa'),
+
+    # --- TAMBAHKAN URL INI ---
+    path('materi/selesai/<int:pk>/', views.tandai_materi_selesai_view, name='tandai_materi_selesai'),
+
+    # --- TAMBAHKAN BARIS INI ---
+    path('materi/batalkan-selesai/<int:pk>/', views.batalkan_materi_selesai_view, name='batalkan_materi_selesai'),
 ]

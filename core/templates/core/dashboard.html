@@ -1,50 +1,43 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="p-4 mb-4 bg-dark bg-opacity-50 rounded-3">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="display-5 fw-bold">Selamat Datang Kembali, {{ user.username }}!</h1>
-            <p class="fs-5 text-white-50">Teruslah menjelajahi dunia ekosistem lahan basah.</p>
+<!-- ============================================== -->
+<!--     HEADER DASHBOARD BARU YANG LEBIH JELAS      -->
+<!-- ============================================== -->
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm text-dark">
+    <h1 class="display-5 fw-bold">Selamat Datang di EkoSphere!</h1>
+    <p class="col-md-8 fs-4">Media Pembelajaran Interaktif untuk Ekosistem Lahan Basah.</p>
+</div>
 
-            {% if lencana_selanjutnya %}
-            <div class="mt-3">
-                <label class="form-label">Progres menuju Lencana: <strong>{{ lencana_selanjutnya.nama
-                        }}</strong></label>
-                <div class="progress" style="height: 20px;">
-                    <div class="progress-bar bg-warning text-dark progress-bar-striped progress-bar-animated"
-                        role="progressbar" style="width: {{ progres_persen }}%;" aria-valuenow="{{ progres_persen }}"
-                        aria-valuemin="0" aria-valuemax="100">
-                        {{ profil_siswa.total_poin }} / {{ lencana_selanjutnya.syarat_poin }} Poin
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <p class="text-warning mt-3 fw-bold"><i class="bi bi-star-fill"></i> Selamat! Anda telah meraih semua
-                lencana!</p>
-            {% endif %}
-        </div>
-
-        <div class="col-md-4 text-center mt-3 mt-md-0">
-            <div class="row">
-                <div class="col-6">
-                    <div class="p-3 bg-dark bg-opacity-50 rounded">
-                        <h3 class="fw-bold">{{ profil_siswa.total_poin }}</h3>
-                        <p class="mb-0 text-white-50">Total Poin</p>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="p-3 bg-dark bg-opacity-50 rounded">
-                        <h3 class="fw-bold">{{ profil_siswa.lencana.count }}</h3>
-                        <p class="mb-0 text-white-50">Lencana Diraih</p>
-                    </div>
+<!-- ============================================== -->
+<!--    BAGIAN BARU: JELAJAHI PENGHUNI LAHAN BASAH     -->
+<!-- ============================================== -->
+<div class="mb-4">
+    <h3 class="text-dark mb-3"><i class="bi bi-binoculars-fill text-success"></i> Jelajahi Penghuni Lahan Basah</h3>
+    <div class="row">
+        {% for item in info_items %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100 text-dark">
+                <img src="{{ item.gambar_url }}" class="card-img-top" alt="{{ item.nama }}" style="height: 180px; object-fit: cover;">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ item.nama }}</h5>
+                    <p class="card-text text-muted">{{ item.deskripsi_singkat }}</p>
                 </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col">
+            <p class="text-muted">Konten "Jelajahi Penghuni" belum ditambahkan di Admin Panel.</p>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- KONTEN DI BAWAH HEADER (TETAP SAMA) -->
+<!-- ============================================== -->
 <div class="row text-dark">
+    <!-- Kolom Kiri: Materi & Arena -->
     <div class="col-lg-7 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-success text-white">
@@ -70,6 +63,7 @@
         </div>
     </div>
 
+    <!-- Kolom Kanan: Progres & Aktivitas Lain -->
     <div class="col-lg-5 mb-4">
         <div class="card shadow-sm mb-4">
             <div class="card-body text-center">

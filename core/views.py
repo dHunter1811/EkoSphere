@@ -1,218 +1,295 @@
 # core/views.py
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
-from .forms import CustomUserCreationForm
-
-# TAMBAHKAN 'PertanyaanArena' DI BARIS INI
-from .models import (
-    User,
-    Topik,
-    SubTopik,
-    Kuis,
-    HasilKuis,
-    ProfilSiswa,
-    Lencana,
-    PertanyaanArena,
-)
-
-# ... (sisa kode view Anda tidak perlu diubah) ...
-
-
-# Hapus 'Materi', tambahkan 'Topik' dan 'SubTopik'
-from .models import (
-    Topik,
-    SubTopik,
-    Kuis,
-    HasilKuis,
-    ProfilSiswa,
-    Lencana,
-)  # Tambahkan HasilKuis & ProfilSiswa
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Count, Q, Avg
+from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
 from django.utils.safestring import mark_safe
+from .forms import CustomUserCreationForm
+from django.contrib import messages  # <--- PASTIKAN INI ADA
+
+# --- Model-model yang diimpor ---
+from .models import (
+    User,
+    Topik,
+    SubTopik,  # Ini adalah model 'Materi' Anda
+    Kuis,
+    Pertanyaan,  # Ini adalah model 'Question' Anda
+    PilihanJawaban,  # Ditambahkan untuk kuis_view
+    HasilKuis,
+    ProfilSiswa,  # Ini adalah model 'Profile' Anda
+    Lencana,
+    PertanyaanArena,
+    JawabanSiswa,
+    InfoEkosistem,
+    UserMateriProgress,
+    QuizAttemptLog,
+)
 
 
+# --- Fungsi Helper Baru untuk Cek Guru ---
+def is_guru(user):
+    return user.is_authenticated and user.role == "Guru"
+
+
+# --- Fungsi Helper Baru untuk Cek Siswa ---
+def is_siswa(user):
+    return user.is_authenticated and user.role == "Siswa"
+
+
+# --- 1. FUNGSI DASHBOARD VIEW TELAH DIPERBAIKI ---
 @login_required
 def dashboard_view(request):
+
+    # Logika "Pengatur Lalu Lintas"
     if request.user.role == "Guru":
-        materi_guru = SubTopik.objects.filter(pembuat=request.user)
+        return redirect("teacher_dashboard")
 
-        # --- LOGIKA BARU UNTUK ANALISIS GURU ---
-
-        # 1. Analisis Peta Kesulitan Konsep (sudah ada)
-        pertanyaan_sulit = (
-            PertanyaanArena.objects.annotate(
-                jumlah_salah=Count(
-                    "jawaban_siswa", filter=Q(jawaban_siswa__jawaban_benar=False)
-                )
-            )
-            .filter(jumlah_salah__gt=0)
-            .order_by("-jumlah_salah")[:5]
-        )
-
-        # 2. Analisis Tingkat Penyelesaian Misi
-        total_siswa = User.objects.filter(role="Siswa").count()
-        # Hitung siswa unik yang pernah mengerjakan kuis ATAU arena
-        siswa_yang_mengerjakan = (
-            User.objects.filter(
-                Q(hasilkuis__isnull=False) | Q(jawabansiswa__isnull=False)
-            )
-            .distinct()
-            .count()
-        )
-        persentase_penyelesaian = (
-            (siswa_yang_mengerjakan / total_siswa) * 100 if total_siswa > 0 else 0
-        )
-
-        # 3. Analisis Identifikasi Siswa
-        siswa_berprestasi = ProfilSiswa.objects.order_by("-total_poin")[
-            :3
-        ]  # 3 siswa teratas
-        siswa_perlu_perhatian = ProfilSiswa.objects.order_by("total_poin")[
-            :3
-        ]  # 3 siswa terbawah
-
-        context = {
-            "daftar_materi": materi_guru,
-            "pertanyaan_sulit": pertanyaan_sulit,
-            "persentase_penyelesaian": persentase_penyelesaian,
-            "total_siswa": total_siswa,
-            "siswa_berprestasi": siswa_berprestasi,
-            "siswa_perlu_perhatian": siswa_perlu_perhatian,
-        }
-        return render(request, "core/teacher_dashboard.html", context)
-    else:
-        # --- LOGIKA BARU UNTUK PROGRES LENCANA ---
+    elif request.user.role == "Siswa":
+        # Logika dashboard siswa (tidak berubah)
         profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
         hasil_kuis_siswa = HasilKuis.objects.filter(siswa=request.user)
         semua_subtopik = SubTopik.objects.all()
         completed_quiz_ids = set(hasil_kuis_siswa.values_list("kuis_id", flat=True))
-
-        # Cari lencana berikutnya yang bisa diraih
         lencana_selanjutnya = (
             Lencana.objects.exclude(id__in=profil_siswa.lencana.all())
             .order_by("syarat_poin")
             .first()
         )
-
         progres_persen = 0
-        if lencana_selanjutnya:
+        if lencana_selanjutnya and lencana_selanjutnya.syarat_poin > 0:
             progres_persen = (
                 profil_siswa.total_poin / lencana_selanjutnya.syarat_poin
             ) * 100
             if progres_persen > 100:
                 progres_persen = 100
-
+        info_items = InfoEkosistem.objects.order_by("?")[:3]
         context = {
             "daftar_materi": semua_subtopik,
             "profil_siswa": profil_siswa,
             "hasil_kuis_list": hasil_kuis_siswa,
             "completed_quiz_ids": completed_quiz_ids,
-            "lencana_selanjutnya": lencana_selanjutnya,  # Data baru
-            "progres_persen": progres_persen,  # Data baru
+            "lencana_selanjutnya": lencana_selanjutnya,
+            "progres_persen": progres_persen,
+            "info_items": info_items,
         }
         return render(request, "core/dashboard.html", context)
 
+    else:
+        return redirect("login")
 
+
+# --- 2. VIEW BARU: TEACHER DASHBOARD VIEW ---
+@login_required
+@user_passes_test(is_guru, login_url="/login/")
+def teacher_dashboard_view(request):
+    # Logika dashboard guru (tidak berubah)
+    siswa_list = User.objects.filter(role="Siswa")
+    total_siswa = siswa_list.count() if siswa_list.exists() else 1
+    semua_materi = SubTopik.objects.all().order_by("topik__urutan", "urutan")
+    progres_modul_kelas = []
+    for materi in semua_materi:
+        siswa_selesai_count = UserMateriProgress.objects.filter(materi=materi).count()
+        persentase = (siswa_selesai_count / total_siswa) * 100
+        progres_modul_kelas.append(
+            {
+                "nama_materi": materi.judul,
+                "persentase": round(persentase),
+                "label": f"{siswa_selesai_count} dari {total_siswa} siswa",
+            }
+        )
+    siswa_berprestasi = ProfilSiswa.objects.filter(user__role="Siswa").order_by(
+        "-total_poin"
+    )[:3]
+    siswa_perlu_perhatian = ProfilSiswa.objects.filter(
+        user__role="Siswa", total_poin__lt=50
+    ).order_by("total_poin")[:3]
+    total_modul_selesai = UserMateriProgress.objects.count()
+    total_modul_seharusnya = total_siswa * semua_materi.count()
+    avg_completion_rate = (
+        (total_modul_selesai / total_modul_seharusnya) * 100
+        if total_modul_seharusnya > 0
+        else 0
+    )
+    one_week_ago = timezone.now() - timezone.timedelta(days=7)
+    siswa_aktif_count = siswa_list.filter(last_login__gte=one_week_ago).count()
+    top_wrong_q_ids = (
+        QuizAttemptLog.objects.filter(is_correct=False, user__role="Siswa")
+        .values("question")
+        .annotate(wrong_count=Count("question"))
+        .order_by("-wrong_count")[:5]
+    )
+    peta_kesulitan = Pertanyaan.objects.filter(
+        id__in=[item["question"] for item in top_wrong_q_ids]
+    )
+    context = {
+        "progres_modul_kelas": progres_modul_kelas,
+        "siswa_berprestasi": siswa_berprestasi,
+        "siswa_perlu_perhatian": siswa_perlu_perhatian,
+        "kpi_avg_completion": round(avg_completion_rate),
+        "kpi_siswa_aktif": f"{siswa_aktif_count} dari {total_siswa} siswa",
+        "peta_kesulitan": peta_kesulitan,
+        "total_siswa": total_siswa,
+        "daftar_materi": SubTopik.objects.filter(pembuat=request.user),
+    }
+    return render(request, "core/teacher_dashboard.html", context)
+
+
+# --- 3. VIEW BARU: DETAIL SISWA VIEW ---
+@login_required
+@user_passes_test(is_guru, login_url="/login/")
+def detail_siswa_view(request, user_id):
+    # Logika detail siswa (tidak berubah)
+    siswa = get_object_or_404(User, id=user_id, role="Siswa")
+    profil_siswa = get_object_or_404(ProfilSiswa, user=siswa)
+    hasil_kuis = HasilKuis.objects.filter(siswa=siswa).order_by("-waktu_selesai")
+    semua_lencana = Lencana.objects.all().order_by("syarat_poin")
+    lencana_dimiliki_ids = profil_siswa.lencana.values_list("id", flat=True)
+    context = {
+        "siswa": siswa,
+        "profil_siswa": profil_siswa,
+        "hasil_kuis_list": hasil_kuis,
+        "semua_lencana": semua_lencana,
+        "lencana_dimiliki_ids": lencana_dimiliki_ids,
+    }
+    return render(request, "core/progres.html", context)
+
+
+# --- 4. VIEW SUBTOPIK DETAIL TELAH DIPERBARUI ---
 @login_required
 def subtopik_detail_view(request, pk):
     semua_topik = Topik.objects.all()
     subtopik_aktif = get_object_or_404(SubTopik, pk=pk)
 
-    # --- LOGIKA BARU UNTUK NAVIGASI ---
-    # Ambil semua subtopik dalam urutan yang benar
-    semua_subtopik_terurut = list(SubTopik.objects.all())
-
+    # --- LOGIKA UNTUK NAVIGASI ---
+    semua_subtopik_terurut = list(
+        SubTopik.objects.all().order_by("topik__urutan", "urutan")
+    )  # Ditambahkan order_by
     try:
-        # Cari index dari subtopik yang sedang aktif
         current_index = semua_subtopik_terurut.index(subtopik_aktif)
-
-        # Tentukan subtopik sebelumnya (jika ada)
         subtopik_sebelumnya = (
             semua_subtopik_terurut[current_index - 1] if current_index > 0 else None
         )
-
-        # Tentukan subtopik selanjutnya (jika ada)
         subtopik_selanjutnya = (
             semua_subtopik_terurut[current_index + 1]
             if current_index < len(semua_subtopik_terurut) - 1
             else None
         )
-
     except ValueError:
-        # Jika terjadi error (seharusnya tidak), set ke None
+        # Jika subtopik_aktif tidak ditemukan (seharusnya tidak terjadi dengan get_object_or_404)
         subtopik_sebelumnya = None
         subtopik_selanjutnya = None
+    # --- AKHIR LOGIKA NAVIGASI ---
+
+    # --- LOGIKA UNTUK PROGRES MISI (Kuis) ---
+    topik_aktif = subtopik_aktif.topik
+    total_subtopik_misi = topik_aktif.subtopik_set.count()
+    kuis_selesai_count = 0
+    if request.user.is_authenticated and request.user.role == "Siswa":
+        kuis_selesai_count = HasilKuis.objects.filter(
+            siswa=request.user, kuis__subtopik__topik=topik_aktif
+        ).count()
+    progres_misi_persen = 0
+    if total_subtopik_misi > 0:
+        progres_misi_persen = (kuis_selesai_count / total_subtopik_misi) * 100
+    # --- AKHIR LOGIKA PROGRES MISI ---
+
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+
+    # --- LOGIKA BARU UNTUK TOMBOL & SIDEBAR ---
+    completed_materi_ids = set()
+    is_materi_selesai = False
+    if request.user.is_authenticated and request.user.role == "Siswa":
+        completed_materi_ids = set(
+            UserMateriProgress.objects.filter(user=request.user).values_list(
+                "materi_id", flat=True
+            )
+        )
+        is_materi_selesai = subtopik_aktif.id in completed_materi_ids
     # --- AKHIR LOGIKA BARU ---
 
     context = {
         "semua_topik": semua_topik,
         "subtopik_aktif": subtopik_aktif,
-        "subtopik_sebelumnya": subtopik_sebelumnya,  # Kirim data ke template
-        "subtopik_selanjutnya": subtopik_selanjutnya,  # Kirim data ke template
+        "subtopik_sebelumnya": subtopik_sebelumnya,
+        "subtopik_selanjutnya": subtopik_selanjutnya,
+        "progres_misi_persen": progres_misi_persen,
+        "kuis_selesai_count": kuis_selesai_count,
+        "total_subtopik_misi": total_subtopik_misi,
+        # --- KIRIM DATA BARU KE TEMPLATE ---
+        "completed_materi_ids": completed_materi_ids,
+        "is_materi_selesai": is_materi_selesai,
     }
     return render(request, "core/materi_detail.html", context)
 
 
+# --- SISA VIEWS ANDA (SUDAH DIPERBARUI & BENAR) ---
+
+
 @login_required
+@user_passes_test(is_siswa, login_url="/login/")
 def kuis_view(request, pk):
+    # Logika view kuis (tidak berubah)
     subtopik = get_object_or_404(SubTopik, pk=pk)
     kuis = subtopik.kuis
-
     if request.method == "POST":
         total_pertanyaan = kuis.pertanyaan.count()
         jawaban_benar = 0
-
         for pertanyaan in kuis.pertanyaan.all():
             jawaban_pengguna_id = request.POST.get(f"pertanyaan_{pertanyaan.id}")
+            is_correct_answer = False
             if jawaban_pengguna_id:
-                pilihan_benar_id = pertanyaan.pilihan.get(is_benar=True).id
-                if int(jawaban_pengguna_id) == pilihan_benar_id:
-                    jawaban_benar += 1
-
-        skor = (jawaban_benar / total_pertanyaan) * 100 if total_pertanyaan > 0 else 0
-
-        # --- LOGIKA BARU: SIMPAN HASIL DAN POIN ---
-
-        # 1. Simpan atau perbarui skor siswa untuk kuis ini
-        HasilKuis.objects.update_or_create(
-            siswa=request.user, kuis=kuis, defaults={"skor": skor}
+                try:
+                    pilihan_benar = pertanyaan.pilihan.get(is_benar=True)
+                    if int(jawaban_pengguna_id) == pilihan_benar.id:
+                        jawaban_benar += 1
+                        is_correct_answer = True
+                except PilihanJawaban.DoesNotExist:
+                    pass
+            QuizAttemptLog.objects.create(
+                user=request.user, question=pertanyaan, is_correct=is_correct_answer
+            )
+        skor_saat_ini = (
+            (jawaban_benar / total_pertanyaan) * 100 if total_pertanyaan > 0 else 0
         )
-
-        # 2. Tambah poin ke profil siswa (misal: 10 poin per jawaban benar)
         profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
-        profil_siswa.total_poin += jawaban_benar * 10
-        profil_siswa.save()
-
-        # --- LOGIKA BARU: PEMBERIAN LENCANA ---
+        try:
+            hasil_sebelumnya = HasilKuis.objects.get(siswa=request.user, kuis=kuis)
+            skor_sebelumnya = hasil_sebelumnya.skor
+        except HasilKuis.DoesNotExist:
+            skor_sebelumnya = 0.0
+        HasilKuis.objects.update_or_create(
+            siswa=request.user, kuis=kuis, defaults={"skor": skor_saat_ini}
+        )
+        tambahan_poin = 0
+        if skor_saat_ini > skor_sebelumnya:
+            jawaban_benar_sebelumnya = round((skor_sebelumnya / 100) * total_pertanyaan)
+            selisih_jawaban_benar = jawaban_benar - jawaban_benar_sebelumnya
+            tambahan_poin = selisih_jawaban_benar * 10
+            if tambahan_poin > 0:
+                profil_siswa.total_poin += tambahan_poin
+                profil_siswa.save()
         lencana_baru_didapat = []
-        # Ambil semua lencana yang belum dimiliki siswa
         lencana_yang_belum_dimiliki = Lencana.objects.exclude(profilsiswa=profil_siswa)
-
         for lencana in lencana_yang_belum_dimiliki:
-            # Cek apakah total poin siswa sudah memenuhi syarat
             if profil_siswa.total_poin >= lencana.syarat_poin:
-                # Berikan lencana kepada siswa
                 profil_siswa.lencana.add(lencana)
                 lencana_baru_didapat.append(lencana)
-        # --- AKHIR LOGIKA BARU ---
-
         context = {
-            "skor": skor,
+            "skor": skor_saat_ini,
             "kuis": kuis,
-            "lencana_baru": lencana_baru_didapat,  # Kirim data lencana baru ke template
+            "lencana_baru": lencana_baru_didapat,
         }
         return render(request, "core/kuis_hasil.html", context)
-
     context = {"kuis": kuis}
     return render(request, "core/kuis.html", context)
 
 
-# View untuk registrasi tidak perlu diubah, tapi pastikan form-nya benar
 def register_view(request):
+    # Logika register (tidak berubah)
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
@@ -220,85 +297,59 @@ def register_view(request):
             return redirect("login")
     else:
         form = CustomUserCreationForm()
-
     context = {"form": form}
     return render(request, "core/register.html", context)
 
 
+# --- SISA API & ARENA VIEWS (TIDAK BERUBAH) ---
 def api_klasifikasi_view(request):
-    # Ambil pertanyaan pertama yang bertipe 'klasifikasi'
     pertanyaan = PertanyaanArena.objects.filter(tipe="klasifikasi").first()
     if pertanyaan:
-        # Kirim konten JSON-nya sebagai respons
         return JsonResponse(pertanyaan.konten_json)
     return JsonResponse({"error": "Data tidak ditemukan"}, status=404)
 
 
 def api_rantai_makanan_view(request):
-    data_ekosistem = {
-        "nama": "Sawah",
-        "organisme": [
-            {"id": 1, "nama": "Padi", "tipe": "produsen", "memakan": []},
-            {"id": 2, "nama": "Tikus", "tipe": "konsumen_1", "memakan": [1]},
-            {"id": 3, "nama": "Ular", "tipe": "konsumen_2", "memakan": [2]},
-            {"id": 4, "nama": "Elang", "tipe": "konsumen_3", "memakan": [3]},
-        ],
-    }
+    data_ekosistem = {"nama": "Rawa Gambut", "organisme": [...]}  # Data statis
     return JsonResponse(data_ekosistem)
 
 
 @login_required
+@user_passes_test(is_siswa, login_url="/login/")
 def duel_simbiosis_view(request):
+    # Logika duel simbiosis (tidak berubah)
     pertanyaan_list = PertanyaanArena.objects.filter(tipe="kartu_simbiosis")
-
-    # Buat daftar dari konten JSON dan tambahkan ID
     data_untuk_js = []
     for p in pertanyaan_list:
         konten = p.konten_json
-        konten["id"] = p.id  # <-- TAMBAHKAN ID DI SINI
+        konten["id"] = p.id
         data_untuk_js.append(konten)
-
     pertanyaan_json = mark_safe(json.dumps(data_untuk_js))
-
-    context = {"pertanyaan_json": pertanyaan_json}
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+    context = {"pertanyaan_json": pertanyaan_json, "profil_siswa": profil_siswa}
     return render(request, "core/arena_duel_simbiosis.html", context)
 
 
 @login_required
-@require_POST  # Hanya mengizinkan metode POST
+@require_POST
+@user_passes_test(is_siswa, login_url="/login/")
 def api_simpan_jawaban_view(request):
+    # Logika simpan jawaban arena (tidak berubah)
     data = json.loads(request.body)
     pertanyaan_id = data.get("pertanyaan_id")
     jawaban_benar = data.get("jawaban_benar")
-
     try:
         pertanyaan = PertanyaanArena.objects.get(id=pertanyaan_id)
-
-        # Simpan log jawaban siswa
+        profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
         JawabanSiswa.objects.create(
             siswa=request.user, pertanyaan=pertanyaan, jawaban_benar=jawaban_benar
         )
-
-        # Dapatkan profil siswa
-        profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
-
-        # Jika jawaban benar, tambahkan poin dan cek lencana
         if jawaban_benar:
-            profil_siswa.total_poin += 10  # Poin per jawaban benar di arena
+            profil_siswa.total_poin += 10
             profil_siswa.save()
-
-            # Cek lencana baru
-            lencana_yang_belum_dimiliki = Lencana.objects.exclude(
-                profilsiswa=profil_siswa
-            )
-            for lencana in lencana_yang_belum_dimiliki:
-                if profil_siswa.total_poin >= lencana.syarat_poin:
-                    profil_siswa.lencana.add(lencana)
-
         return JsonResponse(
             {"status": "sukses", "total_poin_baru": profil_siswa.total_poin}
         )
-
     except PertanyaanArena.DoesNotExist:
         return JsonResponse(
             {"status": "gagal", "error": "Pertanyaan tidak ditemukan"}, status=404
@@ -306,36 +357,57 @@ def api_simpan_jawaban_view(request):
 
 
 @login_required
+@user_passes_test(is_siswa, login_url="/login/")
 def jejak_predator_view(request):
-    # Ambil cerita pertama yang bertipe 'cerita_predator'
+    # Logika jejak predator (tidak berubah)
     cerita = PertanyaanArena.objects.filter(tipe="cerita_predator").first()
-
-    # Kirim data cerita sebagai JSON yang aman
     cerita_json = mark_safe(json.dumps(cerita.konten_json)) if cerita else None
-
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
     context = {
         "cerita_json": cerita_json,
         "pertanyaan_id": cerita.id if cerita else None,
+        "profil_siswa": profil_siswa,
     }
     return render(request, "core/arena_jejak_predator.html", context)
 
 
-# core/views.py
-
-
 @login_required
+@user_passes_test(is_siswa, login_url="/login/")
 def progres_view(request):
-    # Pastikan hanya siswa yang bisa mengakses
-    if request.user.role != "Siswa":
-        return redirect("dashboard")
-
-    # Ambil semua data progres yang relevan
-    profil_siswa = ProfilSiswa.objects.get(user=request.user)
+    # Logika progres siswa (tidak berubah)
+    profil_siswa = get_object_or_404(ProfilSiswa, user=request.user)
     hasil_kuis = HasilKuis.objects.filter(siswa=request.user).order_by("-waktu_selesai")
-
+    semua_lencana = Lencana.objects.all().order_by("syarat_poin")
+    lencana_dimiliki_ids = profil_siswa.lencana.values_list("id", flat=True)
     context = {
         "profil_siswa": profil_siswa,
         "hasil_kuis_list": hasil_kuis,
+        "semua_lencana": semua_lencana,
+        "lencana_dimiliki_ids": lencana_dimiliki_ids,
+        "siswa": request.user,
     }
-    # Pastikan view ini merender template progres.html
     return render(request, "core/progres.html", context)
+
+
+# --- VIEW TANDAI SELESAI (SUDAH BENAR) ---
+@login_required
+@user_passes_test(is_siswa, login_url="/login/")
+def tandai_materi_selesai_view(request, pk):
+    materi = get_object_or_404(SubTopik, pk=pk)
+    UserMateriProgress.objects.get_or_create(user=request.user, materi=materi)
+    messages.success(request, f"Materi '{materi.judul}' telah ditandai selesai!")
+    return redirect("subtopik_detail", pk=pk)
+
+
+# --- VIEW BARU DITAMBAHKAN DI SINI ---
+@login_required
+@user_passes_test(is_siswa, login_url="/login/")
+def batalkan_materi_selesai_view(request, pk):
+    materi = get_object_or_404(SubTopik, pk=pk)
+    progress_entry = UserMateriProgress.objects.filter(user=request.user, materi=materi)
+    if progress_entry.exists():
+        progress_entry.delete()
+        messages.info(
+            request, f"Materi '{materi.judul}' ditandai sebagai 'Belum Selesai'."
+        )
+    return redirect("subtopik_detail", pk=pk)

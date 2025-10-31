@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 # Import semua model Anda, termasuk HasilKuis
 from .models import (User, Topik, SubTopik, Kuis, Pertanyaan, 
                      PilihanJawaban, Lencana, ProfilSiswa, 
-                     PertanyaanArena, JawabanSiswa, HasilKuis) # <-- Tambahkan HasilKuis
+                     PertanyaanArena, JawabanSiswa, HasilKuis, InfoEkosistem) # <-- Tambahkan HasilKuis
 
 # Kustomisasi tampilan admin untuk model User
 class CustomUserAdmin(UserAdmin):
@@ -26,3 +26,7 @@ admin.site.register(ProfilSiswa)
 admin.site.register(PertanyaanArena)
 admin.site.register(JawabanSiswa)
 admin.site.register(HasilKuis) # <-- TAMBAHKAN BARIS INI
+admin.site.site_header = "EkoSphere Administration"
+admin.site.site_title = "EkoSphere Admin Portal"
+admin.site.index_title = "Selamat Datang di Portal Administrasi EkoSphere"
+admin.site.register(InfoEkosistem) # Tambahkan baris ini di bawah

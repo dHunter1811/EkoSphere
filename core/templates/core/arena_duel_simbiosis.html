@@ -10,6 +10,11 @@
             <div id="game-container">
                 <h3 id="skenario" class="mb-4">Skenario akan muncul di sini...</h3>
                 <div id="pilihan-container" class="d-grid gap-2">
+                    </div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+                    </a>
                 </div>
             </div>
             <div id="hasil-container" class="d-none">
@@ -18,43 +23,82 @@
                 <p id="skor-akhir" class="display-3 fw-bold"></p>
                 <a href="{% url 'dashboard' %}" class="btn btn-primary">Kembali ke Dashboard</a>
             </div>
-
-            <div class="text-center mt-4">
-                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-                </a>
-            </div>
         </div>
         <div class="card-footer text-muted">
-            Pertanyaan <span id="nomor-pertanyaan">0</span> dari <span id="total-pertanyaan">0</span> | Skor: <span id="skor-saat-ini">0</span>
+            Pertanyaan <span id="nomor-pertanyaan">0</span> dari <span id="total-pertanyaan">0</span> | Total Poin Anda: <span id="skor-saat-ini">...</span>
         </div>
     </div>
 </div>
 
 <script>
-// ... (script Anda yang sudah ada tidak perlu diubah) ...
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const pertanyaanData = {{ pertanyaan_json|safe }};
     let pertanyaanSekarang = 0;
-    let skor = 0;
+    let skorSesiIni = 0;
 
+    // Deklarasi semua elemen HTML
     const skenarioEl = document.getElementById('skenario');
     const pilihanContainerEl = document.getElementById('pilihan-container');
     const nomorPertanyaanEl = document.getElementById('nomor-pertanyaan');
     const totalPertanyaanEl = document.getElementById('total-pertanyaan');
     const skorSaatIniEl = document.getElementById('skor-saat-ini');
-
     const gameContainer = document.getElementById('game-container');
     const hasilContainer = document.getElementById('hasil-container');
     const skorAkhirEl = document.getElementById('skor-akhir');
 
+    // Fungsi untuk mendapatkan CSRF token (wajib untuk POST)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    function cekJawaban(pilihanPengguna, pertanyaanObjek) {
+        const isBenar = (pilihanPengguna === pertanyaanObjek.jawaban_benar);
+
+        if (isBenar) {
+            skorSesiIni += 20; // Skor untuk sesi ini saja
+        }
+
+        // Kirim hasil ke server untuk disimpan
+        fetch("{% url 'api_simpan_jawaban' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                'pertanyaan_id': pertanyaanObjek.id,
+                'jawaban_benar': isBenar
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'sukses') {
+                // Update tampilan poin dengan total poin terbaru dari server
+                skorSaatIniEl.innerText = data.total_poin_baru;
+            }
+        });
+
+        pertanyaanSekarang++;
+        setTimeout(tampilkanPertanyaan, 500);
+    }
+
     function tampilkanPertanyaan() {
         if (pertanyaanSekarang >= pertanyaanData.length) {
-            // Sembunyikan tombol kembali saat game selesai, karena sudah ada tombol di hasil akhir
-            document.querySelector('.text-center.mt-4').style.display = 'none';
             gameContainer.classList.add('d-none');
             hasilContainer.classList.remove('d-none');
-            skorAkhirEl.innerText = skor;
+            skorAkhirEl.innerText = skorSesiIni;
             return;
         }
 
@@ -66,22 +110,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = document.createElement('button');
             button.className = 'btn btn-outline-primary';
             button.innerText = pilihan;
-            button.onclick = () => cekJawaban(pilihan, data.jawaban_benar);
+            button.onclick = () => cekJawaban(pilihan, data); // Kirim seluruh objek data
             pilihanContainerEl.appendChild(button);
         });
 
         nomorPertanyaanEl.innerText = pertanyaanSekarang + 1;
-    }
-
-    function cekJawaban(jawaban, jawabanBenar) {
-        if (jawaban === jawabanBenar) {
-            skor += 20;
-        }
-
-        pertanyaanSekarang++;
-        skorSaatIniEl.innerText = skor;
-        
-        setTimeout(tampilkanPertanyaan, 500);
     }
 
     totalPertanyaanEl.innerText = pertanyaanData.length;
