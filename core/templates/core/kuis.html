@@ -1,49 +1,250 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="row justify-content-center text-dark">
-    <div class="col-md-8">
-        <div class="card shadow-lg">
-            <div class="card-header bg-success text-white">
-                <h3 class="mb-0">Kuis: {{ kuis.subtopik.judul }}</h3>
-            </div>
-            <div class="card-body p-4 p-md-5">
-                <p class="text-muted">Pilihlah jawaban yang paling tepat untuk setiap pertanyaan di bawah ini.</p>
-                
-                <form method="post" action="{% url 'kuis' pk=kuis.subtopik.pk %}">
-                    {% csrf_token %}
-                    
+
+<style>
+    /* =================================
+    PERBAIKAN 1: EFEK TRANSISI KARTU
+    =================================
+    */
+    .quiz-card {
+        display: none;
+        opacity: 0;
+        transform: scale(0.98); /* Mulai sedikit kecil */
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out; /* Transisi fade & zoom */
+        border: none;
+        border-radius: 15px;
+    }
+
+    .quiz-card.active {
+        display: block;
+        opacity: 1;
+        transform: scale(1); /* Transisi ke ukuran penuh */
+    }
+    /* --- AKHIR PERBAIKAN 1 --- */
+    
+    /* Tombol pilihan jawaban */
+    .answer-option {
+        display: block;
+        width: 100%;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        background-color: #fff;
+        text-align: left;
+        font-size: 1.05rem;
+        transition: all 0.2s ease;
+        cursor: pointer; /* Tambahkan cursor pointer */
+    }
+    .answer-option:hover {
+        border-color: #0d6efd; /* Biru saat di-hover */
+        background-color: #f8f9fa;
+    }
+    
+    /* Tampilan saat jawaban dipilih */
+    .answer-option input[type="radio"]:checked + label {
+        border-color: #198754; /* Hijau saat dipilih */
+        background-color: #e6f9f0;
+        font-weight: bold;
+        color: #198754;
+        box-shadow: 0 0 10px rgba(25, 135, 84, 0.2);
+    }
+    
+    /* Sembunyikan radio button aslinya */
+    .answer-option input[type="radio"] {
+        display: none;
+    }
+
+    /* Navigasi Kotak Soal (di bawah) */
+    #quiz-nav-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        background-color: #fff;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .quiz-nav-box {
+        width: 40px;
+        height: 40px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .quiz-nav-box:hover {
+        background-color: #f0f0f0;
+        border-color: #aaa;
+    }
+    .quiz-nav-box.active {
+        background-color: #0dcaf0; /* Biru Info */
+        border-color: #0dcaf0;
+        color: white;
+    }
+    .quiz-nav-box.answered {
+        background-color: #198754; /* Hijau Sukses */
+        border-color: #198754;
+        color: white;
+    }
+</style>
+
+<div class="container text-dark mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+
+            <form method="post" action="{% url 'kuis' pk=kuis.subtopik.pk %}">
+                {% csrf_token %}
+
+                <div id="quiz-container">
                     {% for pertanyaan in kuis.pertanyaan.all %}
-                    <div class="mb-4">
-                        <p class="fw-bold fs-5">{{ forloop.counter }}. {{ pertanyaan.teks_pertanyaan }}</p>
+                    <div class="card quiz-card shadow-lg {% if forloop.first %}active{% endif %}" id="card-{{ forloop.counter0 }}">
                         
-                        <div class="ps-3">
-                            {% for pilihan in pertanyaan.pilihan.all %}
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" 
-                                       name="pertanyaan_{{ pertanyaan.id }}" 
-                                       value="{{ pilihan.id }}" 
-                                       id="pilihan_{{ pilihan.id }}" 
-                                       required>
-                                <label class="form-check-label" for="pilihan_{{ pilihan.id }}">
-                                    {{ pilihan.teks_jawaban }}
-                                </label>
+                        <div class="card-header bg-success text-white">
+                            <h3 class="mb-0">{{ kuis.judul }}</h3>
+                        </div>
+                        
+                        <div class="card-body p-4 p-md-5">
+                            <p class="text-muted fs-5">Pertanyaan {{ forloop.counter }} dari {{ kuis.pertanyaan.count }}</p>
+                            <h4 class="fw-bold mb-4" style="min-height: 80px;">{{ pertanyaan.teks_pertanyaan }}</h4>
+                            
+                            <div class="answer-options-container">
+                                {% for pilihan in pertanyaan.pilihan.all %}
+                                <div class="answer-option"> <input type="radio" 
+                                           name="pertanyaan_{{ pertanyaan.id }}" 
+                                           id="pilihan_{{ pilihan.id }}" 
+                                           value="{{ pilihan.id }}" 
+                                           data-nav-id="nav-{{ forloop.parentloop.counter0 }}">
+                                    
+                                    <label class="mb-0 w-100" for="pilihan_{{ pilihan.id }}">
+                                        {{ pilihan.teks_jawaban }}
+                                    </label>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
+                        </div>
+
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center p-4">
+                            
+                            {% if not forloop.first %}
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-index="{{ forloop.counter0 }}">
+                                <i class="bi bi-arrow-left"></i> Sebelumnya
+                            </button>
+                            {% else %}
+                                <span></span> 
+                            {% endif %}
+                            
+                            {% if not forloop.last %}
+                            <button type="button" class="btn btn-primary btn-next" data-index="{{ forloop.counter0 }}">
+                                Selanjutnya <i class="bi bi-arrow-right"></i>
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle-fill"></i> Selesai & Kirim Jawaban
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
-                    <hr>
                     {% endfor %}
+                </div>
 
-                    <div classs="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="bi bi-check2-circle"></i> Selesai & Kirim Jawaban
-                        </button>
-                    </div>
-                </form>
+                <div id="quiz-nav-container" class="shadow-sm">
+                    <p class="w-100 text-center text-muted mb-2">Navigasi Soal</p>
+                    {% for pertanyaan in kuis.pertanyaan.all %}
+                    <button type="button" 
+                            class="quiz-nav-box {% if forloop.first %}active{% endif %}" 
+                            data-index="{{ forloop.counter0 }}" 
+                            id="nav-{{ forloop.counter0 }}">
+                        {{ forloop.counter }}
+                    </button>
+                    {% endfor %}
+                </div>
 
-            </div>
+            </form>
+            
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentQuestionIndex = 0;
+        const allCards = document.querySelectorAll('.quiz-card');
+        const allNavs = document.querySelectorAll('.quiz-nav-box');
+        
+        // Fungsi utama untuk pindah soal
+        function showQuestion(index) {
+            allCards[currentQuestionIndex].classList.remove('active');
+            allNavs[currentQuestionIndex].classList.remove('active');
+            
+            allCards[index].classList.add('active');
+            allNavs[index].classList.add('active');
+            
+            currentQuestionIndex = index;
+        }
+
+        // 1. Event listener untuk tombol "Selanjutnya"
+        document.querySelectorAll('.btn-next').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index + 1);
+            });
+        });
+
+        // 2. Event listener untuk tombol "Sebelumnya"
+        document.querySelectorAll('.btn-prev').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index - 1);
+            });
+        });
+
+        // 3. Event listener untuk Navigasi Kotak Soal
+        allNavs.forEach(navBox => {
+            navBox.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index);
+            });
+        });
+        
+        // 4. Event listener untuk menandai soal yang sudah dijawab
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    const navId = this.dataset.navId;
+                    document.getElementById(navId).classList.add('answered');
+                }
+            });
+        });
+        
+        /* =================================
+        PERBAIKAN 2: MEMBUAT CARD BISA DIKLIK
+        =================================
+        */
+        document.querySelectorAll('.answer-option').forEach(card => {
+            card.addEventListener('click', function() {
+                // Temukan radio button di dalam card yang diklik
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    // Cek radio buttonnya
+                    radio.checked = true;
+                    
+                    // Memicu event 'change' secara manual 
+                    // agar logika di (4) tetap berjalan
+                    radio.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+        /* --- AKHIR PERBAIKAN 2 --- */
+    });
+</script>
+
 {% endblock %}

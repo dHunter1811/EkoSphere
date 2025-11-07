@@ -1,43 +1,84 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<!-- ============================================== -->
-<!--     HEADER DASHBOARD BARU YANG LEBIH JELAS      -->
-<!-- ============================================== -->
 <div class="p-5 mb-4 bg-white rounded-3 shadow-sm text-dark">
     <h1 class="display-5 fw-bold">Selamat Datang di EkoSphere!</h1>
     <p class="col-md-8 fs-4">Media Pembelajaran Interaktif untuk Ekosistem Lahan Basah.</p>
 </div>
 
-<!-- ============================================== -->
-<!--    BAGIAN BARU: JELAJAHI PENGHUNI LAHAN BASAH     -->
-<!-- ============================================== -->
 <div class="mb-4">
     <h3 class="text-dark mb-3"><i class="bi bi-binoculars-fill text-success"></i> Jelajahi Penghuni Lahan Basah</h3>
-    <div class="row">
-        {% for item in info_items %}
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100 text-dark">
-                <img src="{{ item.gambar_url }}" class="card-img-top" alt="{{ item.nama }}" style="height: 180px; object-fit: cover;">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.nama }}</h5>
-                    <p class="card-text text-muted">{{ item.deskripsi_singkat }}</p>
+    
+    <style>
+        #penghuniSlider .carousel-control-prev,
+        #penghuniSlider .carousel-control-next {
+            /* 1. Beri latar belakang agar kontras */
+            background-color: rgba(0, 0, 0, 0.4); 
+            
+            /* 2. Buat jadi lingkaran kecil */
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            
+            /* 3. Posisikan di tengah vertikal */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        /* 4. Beri jarak dari tepi */
+        #penghuniSlider .carousel-control-prev {
+            left: 1rem;
+        }
+        #penghuniSlider .carousel-control-next {
+            right: 1rem;
+        }
+    </style>
+    <div id="penghuniSlider" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner">
+            
+            {% for item in info_items %}
+                {% if forloop.counter0|divisibleby:3 %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="row g-3">
+                {% endif %}
+
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm h-100 text-dark">
+                        <img src="{{ item.gambar_url }}" class="card-img-top" alt="{{ item.nama }}" style="height: 180px; object-fit: cover;">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ item.nama }}</h5>
+                            <p class="card-text text-muted">{{ item.deskripsi_singkat }}</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                {% if forloop.counter|divisibleby:3 or forloop.last %}
+                    </div> </div> {% endif %}
+
+            {% empty %}
+                <div class="carousel-item active">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 250px; background-color: #f8f9fa;">
+                        <p class="text-muted fs-5">Konten "Jelajahi Penghuni" belum ditambahkan di Admin Panel.</p>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <div class="col">
-            <p class="text-muted">Konten "Jelajahi Penghuni" belum ditambahkan di Admin Panel.</p>
-        </div>
-        {% endfor %}
+
+        {% if info_items.count > 3 %}
+        <button class="carousel-control-prev" type="button" data-bs-target="#penghuniSlider" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#penghuniSlider" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+        {% endif %}
     </div>
 </div>
 
-<!-- ============================================== -->
-<!-- KONTEN DI BAWAH HEADER (TETAP SAMA) -->
-<!-- ============================================== -->
+
 <div class="row text-dark">
-    <!-- Kolom Kiri: Materi & Arena -->
     <div class="col-lg-7 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-success text-white">
@@ -63,7 +104,6 @@
         </div>
     </div>
 
-    <!-- Kolom Kanan: Progres & Aktivitas Lain -->
     <div class="col-lg-5 mb-4">
         <div class="card shadow-sm mb-4">
             <div class="card-body text-center">

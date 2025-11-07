@@ -21,12 +21,14 @@
         }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-light d-flex flex-column vh-100">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
-                <i class="bi bi-tree-fill"></i> EkoSphere
+            
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="EkoSphere Logo" width="40" height="40" class="d-inline-block me-2">
+                EkoSphere
             </a>
             
             {% if user.is_authenticated %}
@@ -36,15 +38,28 @@
                         <i class="bi bi-person-circle fs-4 me-2"></i>
                         <span>
                             {{ user.username }}
+                            
+                            {% if request.user.role == "Siswa" %}
                             <small class="d-block text-white-50">
                                 <span class="badge bg-warning text-dark me-1"><i class="bi bi-star-fill"></i> {{ profil_siswa.total_poin|default:0 }} Poin</span>
                                 <span class="badge bg-info text-dark"><i class="bi bi-award-fill"></i> {{ profil_siswa.lencana.count|default:0 }} Lencana</span>
                             </small>
+                            {% elif request.user.role == "Guru" %}
+                            <small class="d-block text-white-50">
+                                <span class="badge bg-light text-dark me-1"><i class="bi bi-person-video3"></i> Guru</span>
+                            </small>
+                            {% endif %}
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="{% url 'dashboard' %}"><i class="bi bi-house-door-fill me-2"></i>Dashboard</a></li>
-                        <li><a class="dropdown-item" href="{% url 'progres' %}"><i class="bi bi-graph-up me-2"></i>Lihat Progres</a></li>
+                        
+                        {% if request.user.role == "Siswa" %}
+                            <li><a class="dropdown-item" href="{% url 'dashboard' %}"><i class="bi bi-house-door-fill me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{% url 'progres' %}"><i class="bi bi-graph-up me-2"></i>Lihat Progres</a></li>
+                        {% elif request.user.role == "Guru" %}
+                            <li><a class="dropdown-item" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard Guru</a></li>
+                        {% endif %}
+                        
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form action="{% url 'logout' %}" method="post" class="px-2">
@@ -59,7 +74,16 @@
         </div>
     </nav>
 
-    <main class="container my-4">
+    <main class="container my-4 flex-grow-1">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% elif message.tags == 'error' %}alert-danger{% else %}alert-warning{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
         {% block content %}
         {% endblock %}
     </main>

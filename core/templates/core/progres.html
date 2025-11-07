@@ -1,60 +1,122 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="container text-dark mt-4">
-    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
-        <h1 class="display-5 fw-bold">Progres Belajar: {{ user.username }}</h1>
-        <p class="fs-4">Total Poin: <span class="badge bg-warning text-dark">{{ profil_siswa.total_poin }} Poin</span></p>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-success mt-2"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
-    </div>
+<div class="container mt-5">
 
-    <h2 class="mb-3"><i class="bi bi-award-fill"></i> Koleksi Lencana</h2>
-    <div class="row">
-        {% for lencana in profil_siswa.lencana.all %}
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 text-center shadow-sm">
-                    <div class="card-body">
-                        <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" class="mb-2" width="80">
-                        <h5 class="card-title">{{ lencana.nama }}</h5>
-                        <p class="card-text text-muted">{{ lencana.deskripsi }}</p>
-                    </div>
+    {% if request.user == siswa %}
+        <h1 class="display-5 fw-bold"><i class="bi bi-person-check-fill"></i> Progres Saya</h1>
+        <p class="lead text-muted">Lihat pencapaian, lencana, dan riwayat kuis Anda di sini.</p>
+    {% else %}
+        <h1 class="display-5 fw-bold"><i class="bi bi-person-video3"></i> Progres Siswa: {{ siswa.username }}</h1>
+        <p class="lead text-muted">Detail pencapaian, lencana, dan riwayat kuis untuk siswa ini.</p>
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-secondary btn-sm mb-3">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard Guru
+        </a>
+    {% endif %}
+    
+    <hr class_alias="my-4">
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary"><i class="bi bi-star-fill"></i> Total Poin</h5>
+                    <p class="display-4 fw-bold mb-0">{{ profil_siswa.total_poin }}</p>
                 </div>
             </div>
-        {% empty %}
-            <div class="col">
-                <p class="text-muted">Anda belum mendapatkan lencana apapun. Teruslah belajar!</p>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success"><i class="bi bi-shield-fill"></i> Lencana Diraih</h5>
+                    <p class="display-4 fw-bold mb-0">{{ profil_siswa.lencana.count }}</p>
+                </div>
             </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info"><i class="bi bi-patch-check-fill"></i> Kuis Selesai</h5>
+                    <p class="display-4 fw-bold mb-0">{{ hasil_kuis_list.count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <h2 class="mt-5"><i class="bi bi-shield-shaded"></i> Koleksi Lencana</h2>
+    <div class="row g-3">
+        {% for lencana in semua_lencana %}
+            {% if lencana.id in lencana_dimiliki_ids %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm border-2 border-success">
+                        <img src="{{ lencana.gambar_url }}" class="card-img-top p-4" alt="{{ lencana.nama }}" style="max-height: 200px; object-fit: contain;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ lencana.nama }}</h5>
+                            <p class="card-text small">{{ lencana.deskripsi }}</p>
+                        </div>
+                        <div class="card-footer text-center bg-success text-white fw-bold">
+                            Didapat!
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-md-4">
+                    <div class="card h-100" style="background-color: #f8f9fa;">
+                        <img src="{{ lencana.gambar_url }}" class="card-img-top p-4" alt="{{ lencana.nama }}" style="filter: grayscale(100%); opacity: 0.5; max-height: 200px; object-fit: contain;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-muted">{{ lencana.nama }}</h5>
+                            <p class="card-text small text-muted">{{ lencana.deskripsi }}</p>
+                        </div>
+                        <div class="card-footer text-center bg-light text-muted fw-bold">
+                            Terkunci (Butuh {{ lencana.syarat_poin }} Poin)
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% empty %}
+            <p class="text-muted">Belum ada lencana yang dikonfigurasi oleh Guru.</p>
         {% endfor %}
     </div>
 
-    <hr class="my-4">
 
-    <h2 class="mb-3"><i class="bi bi-check2-circle"></i> Riwayat Kuis</h2>
+    <h2 class="mt-5"><i class="bi bi-card-checklist"></i> Riwayat Pengerjaan Kuis</h2>
     <div class="card shadow-sm">
         <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Nama Kuis</th>
-                        <th>Skor</th>
-                        <th>Waktu Mengerjakan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for hasil in hasil_kuis_list %}
-                    <tr>
-                        <td>{{ hasil.kuis.judul }}</td>
-                        <td><span class="badge bg-primary">{{ hasil.skor|floatformat:0 }}%</span></td>
-                        <td>{{ hasil.waktu_selesai|date:"d M Y, H:i" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">Anda belum memiliki riwayat kuis.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nama Kuis</th>
+                            <th>Skor</th>
+                            <th>Tanggal Pengerjaan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hasil in hasil_kuis_list %}
+                        <tr>
+                            <td><strong>{{ hasil.kuis.judul }}</strong></td>
+                            <td>
+                                {% if hasil.skor >= 75 %}
+                                    <span class="badge fs-6 bg-success">{{ hasil.skor|floatformat:0 }}%</span>
+                                {% else %}
+                                    <span class="badge fs-6 bg-danger">{{ hasil.skor|floatformat:0 }}%</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ hasil.waktu_selesai|date:"d M Y, P" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted p-4">
+                                Belum ada riwayat pengerjaan kuis.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
 </div>
 {% endblock %}

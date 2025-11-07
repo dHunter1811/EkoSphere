@@ -11,7 +11,6 @@
                 <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action bg-light fw-bold">
                     <i class="bi bi-arrow-left-square-fill"></i> Kembali ke Dashboard
                 </a>
-
                 {% for topik in semua_topik %}
                 <div class="list-group-item">
                     <h6 class="mb-1">{{ topik.judul }}</h6>
@@ -19,9 +18,7 @@
                         {% for subtopik in topik.subtopik_set.all %}
                         <a href="{% url 'subtopik_detail' pk=subtopik.pk %}"
                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if subtopik.id == subtopik_aktif.id %}active{% endif %}">
-
                             {{ subtopik.judul }}
-
                             {% if subtopik.id in completed_materi_ids %}
                             <i class="bi bi-check-circle-fill text-success" title="Telah Selesai"></i>
                             {% endif %}
@@ -30,7 +27,6 @@
                     </div>
                 </div>
                 {% endfor %}
-
                 <div class="p-3 mt-auto">
                     <hr>
                     <small>Progres Misi (Kuis)</small>
@@ -68,6 +64,7 @@
                         <div id="pilihan-organisme" class="d-flex justify-content-around p-3 border rounded"></div>
                     </div>
                 </div>
+
                 {% elif subtopik_aktif.judul == "1.1: Mengenal Penghuni Lahan Basah" %}
                 <div class="card text-dark mt-4">
                     <div class="card-header bg-warning">
@@ -97,12 +94,33 @@
                         </div>
                     </div>
                 </div>
+
                 {% elif subtopik_aktif.judul == "1.2: Membedah Interaksi Makhluk Hidup di Rawa" %}
-                <div class="accordion mt-4" id="accordionInteraksi">
-                </div>
-                <div class="text-center mt-4">
-                    <a href="{% url 'duel_simbiosis' %}" class="btn btn-warning btn-lg shadow-sm">⚔️ Mulai Tantangan:
-                        Duel Simbiosis!</a>
+                <div class="card border-primary shadow-lg my-5">
+                    <div class="card-header bg-primary text-white">
+                        <h3><i class="bi bi-joystick"></i> D. Tugas dan Aktivitas di EkoSphere</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Lanjutkan "Ekspedisi Rawa Gambut" Anda di platform EkoSphere dengan
+                            menyelesaikan tugas berikut:</p>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Pelajari Modul Interaktif:</strong> Pastikan Anda telah
+                                membaca dan memahami seluruh materi di halaman ini.</li>
+                            <li class="list-group-item"><strong>Masuk ke Arena Interaktif:</strong> Uji kecepatan dan
+                                ketepatan analisis Anda dengan memainkan:
+                                <ul>
+                                    <li>"Duel Simbiosis Kalsel"</li>
+                                    <li>"Jejak Predator Rawa"</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'duel_simbiosis' %}" class="btn btn-primary btn-lg mx-2">Mulai Duel
+                                Simbiosis</a>
+                            <a href="{% url 'jejak_predator' %}" class="btn btn-warning btn-lg mx-2">Mulai Jejak
+                                Predator</a>
+                        </div>
+                    </div>
                 </div>
                 {% endif %}
                 <hr>
@@ -119,7 +137,6 @@
                     </a>
                     {% endif %}
                 </div>
-
             </div>
 
             <div class="card-footer d-flex justify-content-between align-items-center">
@@ -130,11 +147,9 @@
                 {% else %}
                 <a href="#" class="btn btn-secondary disabled"><i class="bi bi-arrow-left"></i> Sebelumnya</a>
                 {% endif %}
-
                 {% if subtopik_aktif.kuis %}
                 <a href="{% url 'kuis' pk=subtopik_aktif.pk %}" class="btn btn-primary btn-lg mx-3">Mulai Kuis!</a>
                 {% endif %}
-
                 {% if subtopik_selanjutnya %}
                 <a href="{% url 'subtopik_detail' pk=subtopik_selanjutnya.pk %}" class="btn btn-secondary">
                     Selanjutnya <i class="bi bi-arrow-right"></i>
@@ -228,12 +243,15 @@
             "Ketuk organisme yang memakan Konsumen II (Konsumen III)."
         ];
 
-        fetch(apiURL)
-            .then(response => response.json())
-            .then(data => {
-                semuaOrganisme = data.organisme;
-                mulaiSimulasi();
-            });
+        // Hanya jalankan fetch jika elemen simulasi ada di halaman
+        if (instruksiEl && pilihanEl && rantaiEl) {
+            fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    semuaOrganisme = data.organisme;
+                    mulaiSimulasi();
+                });
+        }
 
         function mulaiSimulasi() {
             langkahSaatIni = 0;
@@ -242,26 +260,31 @@
         }
 
         function updateTampilan() {
-            instruksiEl.innerText = instruksiTeks[langkahSaatIni];
-            pilihanEl.innerHTML = '';
+            // Periksa apakah elemen ada sebelum mengaturnya
+            if (instruksiEl) {
+                instruksiEl.innerText = instruksiTeks[langkahSaatIni];
+            }
+            if (pilihanEl) {
+                pilihanEl.innerHTML = '';
+                semuaOrganisme.forEach(org => {
+                    const orgButton = document.createElement('button');
+                    orgButton.className = 'btn btn-outline-success';
+                    orgButton.innerText = org.nama;
+                    orgButton.dataset.id = org.id;
 
-            semuaOrganisme.forEach(org => {
-                const orgButton = document.createElement('button');
-                orgButton.className = 'btn btn-outline-success';
-                orgButton.innerText = org.nama;
-                orgButton.dataset.id = org.id;
+                    if (rantaiMakanan.find(r => r.id === org.id)) {
+                        orgButton.disabled = true;
+                    }
 
-                if (rantaiMakanan.find(r => r.id === org.id)) {
-                    orgButton.disabled = true;
-                }
-
-                orgButton.addEventListener('click', function () {
-                    cekJawaban(org);
+                    orgButton.addEventListener('click', function () {
+                        cekJawaban(org);
+                    });
+                    pilihanEl.appendChild(orgButton);
                 });
-                pilihanEl.appendChild(orgButton);
-            });
-
-            rantaiEl.innerText = 'Rantai Makanan: ' + rantaiMakanan.map(r => r.nama).join(' → ');
+            }
+            if (rantaiEl) {
+                rantaiEl.innerText = 'Rantai Makanan: ' + rantaiMakanan.map(r => r.nama).join(' → ');
+            }
         }
 
         function cekJawaban(organisme) {
@@ -280,9 +303,11 @@
                 rantaiMakanan.push(organisme);
                 langkahSaatIni++;
                 if (langkahSaatIni >= instruksiTeks.length) {
-                    instruksiEl.innerText = "Selamat! Rantai makanan berhasil dibangun!";
-                    pilihanEl.innerHTML = '<button id="reset-btn" class="btn btn-primary">Ulangi Simulasi</button>';
-                    document.getElementById('reset-btn').addEventListener('click', mulaiSimulasi);
+                    if (instruksiEl) instruksiEl.innerText = "Selamat! Rantai makanan berhasil dibangun!";
+                    if (pilihanEl) {
+                        pilihanEl.innerHTML = '<button id="reset-btn" class="btn btn-primary">Ulangi Simulasi</button>';
+                        document.getElementById('reset-btn').addEventListener('click', mulaiSimulasi);
+                    }
                 } else {
                     updateTampilan();
                 }
@@ -290,6 +315,33 @@
                 alert('Pilihan kurang tepat, coba lagi!');
             }
         }
+    });
+</script>
+
+{% elif subtopik_aktif.judul == "1.2: Membedah Interaksi Makhluk Hidup di Rawa" %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Cek jika #infoBox ada, jika tidak, buatkan satu
+        if (!document.getElementById('infoBox')) {
+            const infoBoxDiv = document.createElement('div');
+            infoBoxDiv.id = 'infoBox';
+            infoBoxDiv.className = 'alert alert-info text-center mt-4';
+            infoBoxDiv.style.display = 'none';
+            // Tambahkan di akhir card-body
+            document.querySelector('.col-md-8 .card-body').appendChild(infoBoxDiv);
+        }
+
+        // Script untuk tombol info box
+        document.querySelectorAll('.interaktif-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const infoBox = document.getElementById('infoBox');
+                infoBox.style.display = 'block';
+                infoBox.textContent = btn.dataset.info;
+                // Anda mungkin perlu menambahkan Animate.css ke base.html Anda agar ini berfungsi
+                infoBox.classList.add('animate__animated', 'animate__fadeIn');
+                setTimeout(() => infoBox.classList.remove('animate__fadeIn'), 800);
+            });
+        });
     });
 </script>
 {% endif %}

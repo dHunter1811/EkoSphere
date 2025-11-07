@@ -1,4 +1,6 @@
-{% extends 'core/base.html' %} {% block content %}
+{% extends 'core/base.html' %}
+
+{% block content %}
 <div class="container-fluid mt-4">
     <div class="p-4 rounded" style="background-color: #f4f4f4;">
         <h1 class="display-5 fw-bold">Dashboard Guru</h1>
@@ -13,11 +15,12 @@
                     <h5 class="mb-0">🧠 Peta Kesulitan Konsep</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text text-muted small">Grafik 5 pertanyaan yang paling sering dijawab salah oleh siswa.</p>
+                    <p class="card-text text-muted small">Grafik 5 pertanyaan dengan tingkat kesalahan tertinggi di kelas.</p>
                     <ul class="list-group list-group-flush">
                         {% for soal in peta_kesulitan %}
-                            <li class="list-group-item">
-                                {{ soal.text }} 
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ soal.teks_pertanyaan }}</span>
+                                <span class="badge bg-danger rounded-pill">{{ soal.persentase_salah }}% Salah</span>
                             </li>
                         {% empty %}
                             <li class="list-group-item text-muted">Belum ada data jawaban salah dari siswa.</li>
@@ -25,7 +28,6 @@
                     </ul>
                 </div>
             </div>
-
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">🧑‍🎓 Identifikasi Siswa</h5>
@@ -33,27 +35,65 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>🏆 Siswa Berprestasi</h6>
+                            <h6 class="text-success">🏆 Siswa Berprestasi</h6>
                             <ul class="list-group list-group-flush">
-                                {% for siswa in siswa_berprestasi %}
+                                {% for profil in siswa_berprestasi %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'detail_siswa' siswa.id %}">{{ siswa.username }}</a>
-                                    <span class="badge bg-success rounded-pill">{{ siswa.profile.points }} Poin</span>
+                                    <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                    <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
                                 </li>
+                                {% empty %}
+                                <li class="list-group-item text-muted">Belum ada siswa yang mendapatkan poin.</li>
                                 {% endfor %}
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>⚠️ Perlu Perhatian</h6>
+                            <h6 class="text-danger">⚠️ Perlu Perhatian</h6>
                             <ul class="list-group list-group-flush">
-                                {% for siswa in siswa_perlu_perhatian %}
+                                {% for profil in siswa_perlu_perhatian %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'detail_siswa' siswa.id %}">{{ siswa.username }}</a>
-                                    <span class="badge bg-danger rounded-pill">{{ siswa.profile.points }} Poin</span>
+                                    <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                    <span class="badge bg-danger rounded-pill">{{ profil.total_poin }} Poin</span>
                                 </li>
+                                {% empty %}
+                                <li class="list-group-item text-muted">Tidak ada siswa dengan poin rendah.</li>
                                 {% endfor %}
                             </ul>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Daftar Siswa Kelas (Total: {{ total_siswa }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nama Siswa</th>
+                                    <th>Total Poin</th>
+                                    <th>Lencana Diraih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profil in daftar_siswa_lengkap %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                    </td>
+                                    <td>{{ profil.total_poin }}</td>
+                                    <td>{{ profil.lencana.count }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Belum ada siswa yang terdaftar.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -92,6 +132,37 @@
                             </div>
                             <small class="text-muted">{{ modul.label }}</small>
                         </div>
+                    {% empty %}
+                        <p class="text-muted">Belum ada materi yang dibuat.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Performa Kuis Kelas</h5>
+                </div>
+                <div class="card-body">
+                    {% for kuis in analitik_kuis %}
+                        <div class="mb-3">
+                            <label class="form-label small">{{ kuis.judul_kuis }}</small>
+                            {% if kuis.rata_rata is not None %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-warning text-dark" role="progressbar" style="width: {{ kuis.rata_rata }}%;" aria-valuenow="{{ kuis.rata_rata }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ kuis.rata_rata }}% (Rata-rata)
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ kuis.jumlah_pengerjaan }} siswa mengerjakan</small>
+                            {% else %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-light text-dark" role="progressbar" style="width: 100%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                        Belum ada pengerjaan
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">Belum ada kuis yang dibuat.</p>
                     {% endfor %}
                 </div>
             </div>

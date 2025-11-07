@@ -1,46 +1,48 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-lg border-0 mt-5">
-                <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <h3 class="fw-bold"><i class="bi bi-tree-fill text-success"></i> EkoSphere Login</h3>
-                        <p class="text-muted">Masuk untuk melanjutkan petualanganmu.</p>
+
+<div class="row d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-7 col-lg-5 col-xl-4">
+        
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-body p-4 p-sm-5">
+                
+                <div class="text-center mb-4">
+                    <img src="{% static 'images/logo.png' %}" alt="EkoSphere Logo" width="72" height="72">
+                    <h3 class="fw-bold mt-3 mb-1">EkoSphere Login</h3>
+                    <p class="text-muted">Masuk untuk melanjutkan petualanganmu.</p>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    Username atau password Anda salah. Silakan coba lagi.
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-floating mb-4">
+                        <input type="text" class="form-control" id="id_username" name="username" placeholder=" " required>
+                        <label for="id_username"><i class="bi bi-person-fill me-2"></i>Username</label>
                     </div>
+                    
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control" id="id_password" name="password" placeholder=" " required>
+                        <label for="id_password"><i class="bi bi-lock-fill me-2"></i>Password</label>
+                    </div>
+                    
+                    <div class="d-grid my-4">
+                        <button class="btn btn-success btn-lg fw-bold" type="submit">Login</button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <small class="text-muted">Belum punya akun? <a href="{% url 'register' %}" class="text-success fw-bold text-decoration-none">Daftar di sini.</a></small>
+                    </div>
+                </form>
 
-                    <form method="post">
-                        {% csrf_token %}
-
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2">
-                            {% for error in form.non_field_errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        <div class="input-group mb-3">
-                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                            <input type="text" name="username" class="form-control" placeholder="Username" required>
-                        </div>
-
-                        <div class="input-group mb-4">
-                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                            <input type="password" name="password" class="form-control" placeholder="Password" required>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success">Login</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center py-3">
-                    <small class="text-muted">Belum punya akun? <a href="{% url 'register' %}">Daftar di
-                            sini.</a></small>
-                </div>
             </div>
         </div>
     </div>

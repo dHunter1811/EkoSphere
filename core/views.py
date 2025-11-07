@@ -66,7 +66,7 @@ def dashboard_view(request):
             ) * 100
             if progres_persen > 100:
                 progres_persen = 100
-        info_items = InfoEkosistem.objects.order_by("?")[:3]
+        info_items = InfoEkosistem.objects.order_by("?")
         context = {
             "daftar_materi": semua_subtopik,
             "profil_siswa": profil_siswa,
@@ -84,15 +84,19 @@ def dashboard_view(request):
 
 # --- 2. VIEW BARU: TEACHER DASHBOARD VIEW ---
 @login_required
-@user_passes_test(is_guru, login_url="/login/")
+@user_passes_test(is_guru, login_url="/login/")  # Penjaga ini sudah benar
 def teacher_dashboard_view(request):
-    # Logika dashboard guru (tidak berubah)
+
     siswa_list = User.objects.filter(role="Siswa")
     total_siswa = siswa_list.count() if siswa_list.exists() else 1
+
+    # --- 1. Progres Modul Kelas (Sudah Benar) ---
     semua_materi = SubTopik.objects.all().order_by("topik__urutan", "urutan")
     progres_modul_kelas = []
     for materi in semua_materi:
-        siswa_selesai_count = UserMateriProgress.objects.filter(materi=materi).count()
+        siswa_selesai_count = UserMateriProgress.objects.filter(
+            materi=materi, user__role="Siswa"
+        ).count()
         persentase = (siswa_selesai_count / total_siswa) * 100
         progres_modul_kelas.append(
             {
@@ -101,39 +105,93 @@ def teacher_dashboard_view(request):
                 "label": f"{siswa_selesai_count} dari {total_siswa} siswa",
             }
         )
-    siswa_berprestasi = ProfilSiswa.objects.filter(user__role="Siswa").order_by(
-        "-total_poin"
-    )[:3]
+
+    # --- 2. Identifikasi Siswa (Sudah Benar) ---
+    siswa_berprestasi = ProfilSiswa.objects.filter(
+        user__role="Siswa", total_poin__gt=0
+    ).order_by("-total_poin")[:3]
+
     siswa_perlu_perhatian = ProfilSiswa.objects.filter(
         user__role="Siswa", total_poin__lt=50
     ).order_by("total_poin")[:3]
-    total_modul_selesai = UserMateriProgress.objects.count()
+
+    # --- 3. Statistik Kinerja Kelas (KPI) (Sudah Benar) ---
+    total_modul_selesai = UserMateriProgress.objects.filter(user__role="Siswa").count()
     total_modul_seharusnya = total_siswa * semua_materi.count()
     avg_completion_rate = (
         (total_modul_selesai / total_modul_seharusnya) * 100
         if total_modul_seharusnya > 0
         else 0
     )
+
     one_week_ago = timezone.now() - timezone.timedelta(days=7)
     siswa_aktif_count = siswa_list.filter(last_login__gte=one_week_ago).count()
-    top_wrong_q_ids = (
-        QuizAttemptLog.objects.filter(is_correct=False, user__role="Siswa")
+
+    # --- 4. Peta Kesulitan Konsep (LOGIKA DIPERBARUI & DIPERBAIKI) ---
+    
+    # Query dibungkus dengan () agar lebih aman dari error indentasi
+    peta_kesulitan_data = (
+        QuizAttemptLog.objects.filter(user__role="Siswa")
         .values("question")
-        .annotate(wrong_count=Count("question"))
+        .annotate(
+            total_attempts=Count("question"),  # Total pengerjaan
+            wrong_count=Count("question", filter=Q(is_correct=False)), # Jumlah salah
+        )
+        .filter(wrong_count__gt=0)
         .order_by("-wrong_count")[:5]
     )
-    peta_kesulitan = Pertanyaan.objects.filter(
-        id__in=[item["question"] for item in top_wrong_q_ids]
+    
+    peta_kesulitan = []
+    for item in peta_kesulitan_data:
+        question = Pertanyaan.objects.get(id=item["question"])
+        wrong_count = item["wrong_count"]
+        total_attempts = item["total_attempts"]
+        
+        # Hitung persentase kesalahan
+        persentase_salah = (wrong_count / total_attempts) * 100 if total_attempts > 0 else 0
+        
+        peta_kesulitan.append({
+            "teks_pertanyaan": question.teks_pertanyaan,
+            "wrong_count": wrong_count,
+            "persentase_salah": round(persentase_salah, 1),
+        })
+    # --- AKHIR LOGIKA BARU Peta Kesulitan Konsep ---
+
+
+    # --- 5. LOGIKA BARU: Daftar Siswa Lengkap (Student Roster) ---
+    daftar_siswa_lengkap = ProfilSiswa.objects.filter(user__role="Siswa").order_by(
+        "user__username"
     )
+
+    # --- 6. LOGIKA BARU: Analitik Rata-rata per Kuis ---
+    semua_kuis = Kuis.objects.all().order_by("subtopik__urutan")
+    analitik_kuis = []
+    for kuis in semua_kuis:
+        data = HasilKuis.objects.filter(kuis=kuis).aggregate(
+            rata_rata_skor=Avg("skor"), jumlah_pengerjaan=Count("id")
+        )
+        rata_rata = data.get("rata_rata_skor")
+        jumlah = data.get("jumlah_pengerjaan")
+
+        analitik_kuis.append(
+            {
+                "judul_kuis": kuis.judul,
+                "rata_rata": round(rata_rata) if rata_rata is not None else None,
+                "jumlah_pengerjaan": jumlah,
+            }
+        )
+    # --- AKHIR LOGIKA BARU ---
+
     context = {
         "progres_modul_kelas": progres_modul_kelas,
         "siswa_berprestasi": siswa_berprestasi,
         "siswa_perlu_perhatian": siswa_perlu_perhatian,
         "kpi_avg_completion": round(avg_completion_rate),
         "kpi_siswa_aktif": f"{siswa_aktif_count} dari {total_siswa} siswa",
-        "peta_kesulitan": peta_kesulitan,
+        "peta_kesulitan": peta_kesulitan, # <-- Variabel ini sekarang berisi data baru
         "total_siswa": total_siswa,
-        "daftar_materi": SubTopik.objects.filter(pembuat=request.user),
+        "daftar_siswa_lengkap": daftar_siswa_lengkap,
+        "analitik_kuis": analitik_kuis,
     }
     return render(request, "core/teacher_dashboard.html", context)
 
@@ -310,7 +368,12 @@ def api_klasifikasi_view(request):
 
 
 def api_rantai_makanan_view(request):
-    data_ekosistem = {"nama": "Rawa Gambut", "organisme": [...]}  # Data statis
+    data_ekosistem = {"nama": "Rawa Gambut", "organisme": [
+        {"id": 1, "nama": "Fitoplankton", "tipe": "produsen", "memakan": []},
+        {"id": 2, "nama": "Udang Kecil", "tipe": "konsumen_1", "memakan": [1]},
+        {"id": 3, "nama": "Ikan Haruan", "tipe": "konsumen_2", "memakan": [2]},
+        {"id": 4, "nama": "Bangau", "tipe": "konsumen_3", "memakan": [3]},
+    ]}  # Data statis
     return JsonResponse(data_ekosistem)
 
 

@@ -1,40 +1,143 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container text-center text-dark mt-4">
-    <div class="card mx-auto" style="max-width: 600px;">
-        <div class="card-header bg-warning">
-            <h2>Duel Simbiosis</h2>
-        </div>
-        <div class="card-body">
-            <div id="game-container">
-                <h3 id="skenario" class="mb-4">Skenario akan muncul di sini...</h3>
-                <div id="pilihan-container" class="d-grid gap-2">
+<style>
+    /* CSS Kustom untuk Halaman Arena */
+    
+    .arena-row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .arena-illustration {
+        background: url('https://images.unsplash.com/photo-1444930694458-01babf71870c?q=80&w=1974') no-repeat center center;
+        background-size: cover;
+        filter: brightness(0.9);
+    }
+
+    .arena-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background-color: #ffffff;
+    }
+    
+    @media (max-width: 767px) {
+        .arena-illustration {
+            min-height: 200px;
+            border-radius: 15px 15px 0 0;
+        }
+        .arena-container {
+            border-radius: 0 0 15px 15px;
+        }
+    }
+
+    .game-card {
+        width: 100%;
+    }
+    
+    .game-card .card-header {
+        background-color: #ffc107;
+        color: #000;
+        border: none;
+        padding: 1rem 1.5rem;
+    }
+
+    .answer-btn {
+        font-size: 1.1rem;
+        font-weight: 500;
+        text-align: left;
+        padding: 1rem;
+        border: 2px solid #e0e0e0;
+        transition: all 0.2s ease;
+    }
+    .answer-btn:hover {
+        background-color: #f8f9fa;
+        border-color: #0d6efd;
+    }
+    
+    .answer-btn.btn-success {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        color: white !important;
+    }
+    .answer-btn.btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: white !important;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+            <div class="row g-0 arena-row">
+                
+                {# PERUBAHAN DI SINI: Gambar sekarang menggunakan col-md-5 #}
+                <div class="col-md-5 d-none d-md-block arena-illustration">
                     </div>
-                <div class="text-center mt-4">
-                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-                    </a>
+
+                {# PERUBAHAN DI SINI: Area game sekarang menggunakan col-md-7 #}
+                <div class="col-md-7 col-12 arena-container">
+                    <div class="game-card">
+                        
+                        <div class="card-header text-center">
+                            <h2 class="fw-bold mb-0">Duel Simbiosis</h2>
+                        </div>
+                        
+                        <div class="card-body p-4 p-md-5">
+                            
+                            <div id="game-container">
+                                <h3 id="skenario" class="mb-4 text-center" style="min-height: 80px;">Skenario akan muncul di sini...</h3>
+                                <div id="pilihan-container" class="d-grid gap-3">
+                                    </div>
+                                <div class="text-center mt-4">
+                                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div id="hasil-container" class="d-none text-center">
+                                <i class="bi bi-award-fill text-warning display-1 mb-3"></i>
+                                <h3 class="fw-bold">Game Selesai!</h3>
+                                <p class="fs-4">Skor Sesi Ini:</p>
+                                <p id="skor-akhir" class="display-3 fw-bold text-success"></p>
+                                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Kembali ke Dashboard</a>
+                            </div>
+
+                        </div>
+                        
+                        <div class="card-footer text-muted" style="background-color: #f8f9fa; padding: 1.25rem;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span id="progress-text" class="small">
+                                    Pertanyaan <span id="nomor-pertanyaan">0</span> dari <span id="total-pertanyaan">0</span>
+                                </span>
+                                <span class="small">
+                                    Total Poin: <strong id="skor-saat-ini" class="text-warning">{{ profil_siswa.total_poin|default:0 }}</strong>
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        
+                    </div>
                 </div>
             </div>
-            <div id="hasil-container" class="d-none">
-                <h3>Game Selesai!</h3>
-                <p class="fs-4">Skor Sesi Ini:</p>
-                <p id="skor-akhir" class="display-3 fw-bold"></p>
-                <a href="{% url 'dashboard' %}" class="btn btn-primary">Kembali ke Dashboard</a>
-            </div>
-        </div>
-        <div class="card-footer text-muted">
-            Pertanyaan <span id="nomor-pertanyaan">0</span> dari <span id="total-pertanyaan">0</span> | Total Poin Anda: <span id="skor-saat-ini">...</span>
         </div>
     </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const pertanyaanData = {{ pertanyaan_json|safe }};
     let pertanyaanSekarang = 0;
     let skorSesiIni = 0;
+    let skorTotalServer = {{ profil_siswa.total_poin|default:0 }}; 
 
     // Deklarasi semua elemen HTML
     const skenarioEl = document.getElementById('skenario');
@@ -45,8 +148,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const gameContainer = document.getElementById('game-container');
     const hasilContainer = document.getElementById('hasil-container');
     const skorAkhirEl = document.getElementById('skor-akhir');
+    const progressText = document.getElementById('progress-text');
+    const progressBar = document.getElementById('progress-bar');
 
-    // Fungsi untuk mendapatkan CSRF token (wajib untuk POST)
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -63,14 +167,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     const csrftoken = getCookie('csrftoken');
 
-    function cekJawaban(pilihanPengguna, pertanyaanObjek) {
+    function cekJawaban(pilihanPengguna, pertanyaanObjek, tombolYangDiklik) {
         const isBenar = (pilihanPengguna === pertanyaanObjek.jawaban_benar);
+        
+        const semuaTombol = pilihanContainerEl.querySelectorAll('button');
+        semuaTombol.forEach(btn => btn.disabled = true);
 
         if (isBenar) {
-            skorSesiIni += 20; // Skor untuk sesi ini saja
+            skorSesiIni += 20; 
+            tombolYangDiklik.classList.add('btn-success');
+        } else {
+            tombolYangDiklik.classList.add('btn-danger');
+            semuaTombol.forEach(btn => {
+                if (btn.dataset.answer === pertanyaanObjek.jawaban_benar) {
+                    btn.classList.add('btn-success');
+                }
+            });
         }
 
-        // Kirim hasil ke server untuk disimpan
         fetch("{% url 'api_simpan_jawaban' %}", {
             method: 'POST',
             headers: {
@@ -85,13 +199,13 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'sukses') {
-                // Update tampilan poin dengan total poin terbaru dari server
-                skorSaatIniEl.innerText = data.total_poin_baru;
+                skorTotalServer = data.total_poin_baru;
+                skorSaatIniEl.innerText = skorTotalServer;
             }
         });
 
         pertanyaanSekarang++;
-        setTimeout(tampilkanPertanyaan, 500);
+        setTimeout(tampilkanPertanyaan, 1500); 
     }
 
     function tampilkanPertanyaan() {
@@ -99,25 +213,48 @@ document.addEventListener('DOMContentLoaded', function () {
             gameContainer.classList.add('d-none');
             hasilContainer.classList.remove('d-none');
             skorAkhirEl.innerText = skorSesiIni;
+            
+            progressText.innerText = "Selesai!";
+            progressBar.style.width = '100%';
+            nomorPertanyaanEl.innerText = totalPertanyaanEl.innerText;
             return;
         }
 
         const data = pertanyaanData[pertanyaanSekarang];
         skenarioEl.innerText = data.soal;
+        
+        skenarioEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
         pilihanContainerEl.innerHTML = '';
+
+        const icons = {
+            'Mutualisme': 'bi bi-heart-fill text-danger',
+            'Komensalisme': 'bi bi-house-fill text-primary',
+            'Parasitisme': 'bi bi-bug-fill text-warning'
+        };
 
         data.pilihan.forEach(pilihan => {
             const button = document.createElement('button');
-            button.className = 'btn btn-outline-primary';
-            button.innerText = pilihan;
-            button.onclick = () => cekJawaban(pilihan, data); // Kirim seluruh objek data
+            button.className = 'btn btn-light answer-btn d-flex justify-content-between align-items-center';
+            button.dataset.answer = pilihan;
+            
+            button.innerHTML = `
+                <span>${pilihan}</span>
+                <i class="${icons[pilihan] || 'bi-question-circle-fill'} fs-4"></i>
+            `;
+            
+            button.onclick = () => cekJawaban(pilihan, data, button);
             pilihanContainerEl.appendChild(button);
         });
 
         nomorPertanyaanEl.innerText = pertanyaanSekarang + 1;
+        progressText.innerText = `Pertanyaan ${pertanyaanSekarang + 1} dari ${pertanyaanData.length}`;
+        const percent = (pertanyaanSekarang / pertanyaanData.length) * 100;
+        progressBar.style.width = `${percent}%`;
     }
 
     totalPertanyaanEl.innerText = pertanyaanData.length;
+    skorSaatIniEl.innerText = skorTotalServer;
     tampilkanPertanyaan();
 });
 </script>
