@@ -1,46 +1,146 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center text-dark">
-    <div class="col-md-8">
-        <div class="card shadow-lg text-center">
-            <div class="card-header bg-success text-white">
-                <h3 class="mb-0">Hasil Kuis: {{ kuis.subtopik.judul }}</h3>
-            </div>
-            <div class="card-body p-5">
-                
-                {% if skor >= 75 %}
-                    <h1 class="display-1 text-success"><i class="bi bi-award-fill"></i></h1>
-                    <h2 class="card-title">Luar Biasa!</h2>
-                {% else %}
-                    <h1 class="display-1 text-warning"><i class="bi bi-emoji-sunglasses-fill"></i></h1>
-                    <h2 class="card-title">Usaha yang Bagus!</h2>
-                {% endif %}
-                
-                <p class="fs-4">Skor Anda:</p>
-                <h1 class="display-2 fw-bold {% if skor >= 75 %}text-success{% else %}text-warning{% endif %}">{{ skor|floatformat:0 }}%</h1>
-                <p class="text-muted">Anda telah menyelesaikan kuis ini.</p>
-                
-                {% if lencana_baru %}
-                    <div class="alert alert-warning mt-4">
-                        <h4 class="alert-heading">Lencana Baru Diraih!</h4>
-                        {% for lencana in lencana_baru %}
-                            <p>Selamat, Anda mendapatkan lencana <strong>{{ lencana.nama }}</strong>!</p>
-                            <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="80">
-                        {% endfor %}
-                    </div>
-                {% endif %}
+<div class="container text-dark mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
 
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-house-door-fill"></i> Kembali ke Dashboard
+            {% with kkm=75 %} <div class="card shadow-lg border-0 text-center mb-4">
+                <div class="card-header {% if skor >= kkm %}bg-success{% else %}bg-danger{% endif %} text-white">
+                    <h2 class="mb-0">{% if skor >= kkm %}Selamat, Anda Lulus!{% else %}Kuis Selesai{% endif %}</h2>
+                </div>
+                <div class="card-body p-5">
+                    <h5 class="text-muted">Skor Anda</h5>
+                    <p class="display-1 fw-bold {% if skor >= kkm %}text-success{% else %}text-danger{% endif %}">{{ skor|floatformat:0 }}</p>
+                    
+                    {% if skor >= kkm %}
+                    <p class="fs-5 mb-4">Kerja bagus! Anda telah menguasai materi ini.</p>
+                    {% else %}
+                    <p class="fs-5 mb-4">Jangan menyerah! Coba review jawaban Anda di bawah ini untuk belajar lagi.</p>
+                    {% endif %}
+                    
+                    <a href="{% url 'subtopik_detail' pk=kuis.subtopik.pk %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Kembali ke Materi
                     </a>
-                    <a href="{% url 'subtopik_detail' pk=kuis.subtopik.pk %}" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-book"></i> Tinjau Materi
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-house-door-fill"></i> Kembali ke Dashboard
                     </a>
                 </div>
             </div>
-        </div>
+            {% endwith %}
+
+            {% if lencana_baru %}
+                <div class="alert alert-warning border-0 shadow-sm text-center p-4">
+                    <h4 class="alert-heading"><i class="bi bi-award-fill"></i> Lencana Baru Didapat!</h4>
+                    <p>Selamat! Poin Anda bertambah dan Anda mendapatkan lencana baru:</p>
+                    {% for lencana in lencana_baru %}
+                        <div class="d-flex align-items-center justify-content-center">
+                            <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="50" class="me-3">
+                            <span class="fs-5 fw-bold">{{ lencana.nama }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="row justify-content-center mt-5">
+                <div class="col-12">
+                    <h2 class="mb-3"><i class="bi bi-search"></i> Review Jawaban</h2>
+                    
+                    <div class="accordion" id="reviewAccordion">
+                        
+                        {% for hasil in hasil_review %}
+                        <div class="accordion-item shadow-sm mb-2">
+                            <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+                                <button class="accordion-button {% if hasil.is_correct %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="{% if hasil.is_correct %}false{% else %}true{% endif %}" aria-controls="collapse-{{ forloop.counter }}">
+                                    
+                                    {% if hasil.is_correct %}
+                                        <i class="bi bi-check-circle-fill text-success me-2 fs-5"></i> 
+                                        <strong>Pertanyaan {{ forloop.counter }}: Benar</strong>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger me-2 fs-5"></i>
+                                        <strong>Pertanyaan {{ forloop.counter }}: Salah</strong>
+                                    {% endif %}
+                                    
+                                </button>
+                            </h2>
+                            <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse {% if not hasil.is_correct %}show{% endif %}" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#reviewAccordion">
+                                <div class="accordion-body">
+                                    <p class="fw-bold mb-3">{{ hasil.pertanyaan.teks_pertanyaan }}</p>
+                                    
+                                    <ul class="list-group list-group-flush">
+                                        {% for pilihan in hasil.pertanyaan.pilihan.all %}
+                                            {% if pilihan == hasil.pilihan_benar %}
+                                                <li class="list-group-item list-group-item-success fw-bold">
+                                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                                    {{ pilihan.teks_jawaban }} (Jawaban Benar)
+                                                </li>
+                                            {% elif pilihan == hasil.pilihan_pengguna %}
+                                                <li class="list-group-item list-group-item-danger">
+                                                    <i class="bi bi-x-circle-fill me-2"></i>
+                                                    {{ pilihan.teks_jawaban }} (Pilihan Anda)
+                                                </li>
+                                            {% else %}
+                                                <li class="list-group-item">
+                                                    {{ pilihan.teks_jawaban }}
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                    
+                                    {% if hasil.pertanyaan.penjelasan %}
+                                    <div class="card-body mt-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                                        <p class="mb-1"><strong><i class="bi bi-info-circle-fill text-primary"></i> Penjelasan:</strong></p>
+                                        <div class="mb-0 text-muted">{{ hasil.pertanyaan.penjelasan|safe }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Logika untuk membuka jawaban salah pertama secara otomatis
+    const accordion = document.getElementById('reviewAccordion');
+    if (accordion) {
+        // Cari tombol pertama yang 'collapsed' (yang berarti jawabannya SALAH)
+        const firstWrongAnswerButton = accordion.querySelector('.accordion-button.collapsed');
+        
+        if (firstWrongAnswerButton) {
+            // Jika ada jawaban salah, kita ingin BUKA accordionnya
+            const targetId = firstWrongAnswerButton.getAttribute('data-bs-target');
+            const targetCollapse = document.querySelector(targetId);
+            
+            // Hapus 'collapsed' dari tombol dan 'show' dari item lain
+            document.querySelectorAll('.accordion-button').forEach(btn => btn.classList.add('collapsed'));
+            document.querySelectorAll('.accordion-collapse').forEach(col => col.classList.remove('show'));
+            
+            // Buka item yang salah
+            firstWrongAnswerButton.classList.remove('collapsed');
+            firstWrongAnswerButton.setAttribute('aria-expanded', 'true');
+            if (targetCollapse) {
+                targetCollapse.classList.add('show');
+            }
+        } else {
+            // Jika semua benar, buka pertanyaan PERTAMA saja
+            const firstButton = accordion.querySelector('.accordion-button');
+            const firstCollapse = accordion.querySelector('.accordion-collapse');
+            if(firstButton) {
+                firstButton.classList.remove('collapsed');
+                firstButton.setAttribute('aria-expanded', 'true');
+            }
+            if(firstCollapse) {
+                firstCollapse.classList.add('show');
+            }
+        }
+    }
+});
+</script>
+
 {% endblock %}

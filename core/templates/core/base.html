@@ -18,12 +18,18 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+            /* =================================
+            PERBAIKAN 1A: MENGATASI FIXED-TOP
+            Menambahkan padding di atas body agar konten tidak tertutup navbar
+            =================================
+            */
+            padding-top: 70px; /* Sesuaikan (misal 70px) dengan tinggi navbar Anda */
         }
     </style>
 </head>
 <body class="bg-light d-flex flex-column vh-100">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm fixed-top">
         <div class="container">
             
             <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'dashboard' %}">
@@ -90,7 +96,7 @@
 
     <footer class="bg-dark text-white text-center py-3 mt-auto">
         <div class="container">
-            <p class="mb-0">&copy; 2025 EkoSphere | Jurusan Pendidikan Komputer, Universitas Lambung Mangkurat</p>
+            <p class="mb-0 text-center">&copy; 2025 EkoSphere | Jurusan Pendidikan Komputer, Universitas Lambung Mangkurat</p>
         </div>
     </footer>
 

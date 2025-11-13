@@ -1,0 +1,76 @@
+/* ========================================================== */
+/* GAYA DASAR & LATAR BELAKANG                                */
+/* ========================================================== */
+
+body {
+    /* Mengganti latar belakang dengan gambar baru */
+    background-image: url('https://imgur.com/TZ4ofNV');
+    background-size: cover; /* Membuat gambar menutupi seluruh layar */
+    background-position: center; /* Posisi gambar di tengah */
+    background-attachment: fixed; /* Gambar tidak ikut scroll */
+}
+
+/* ========================================================== */
+/* GAYA DASAR & FONT                                          */
+/* ========================================================== */
+
+/* Transisi halus untuk semua elemen agar animasi tidak kaku */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* ========================================================== */
+/* GAYA KOMPONEN KARTU (CARD)                                 */
+/* ========================================================== */
+
+/* Memberikan bayangan yang lebih menonjol secara permanen */
+.card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: none !important; /* Menghapus border agar terlihat lebih bersih */
+}
+
+/* Efek bayangan yang lebih kuat dan terangkat saat kursor di atas kartu */
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+/* ========================================================== */
+/* GAYA ELEMEN INTERAKTIF                                     */
+/* ========================================================== */
+
+/* Memberi highlight pada item di daftar materi saat kursor di atasnya */
+.list-group-item-action:hover {
+    background-color: #e9f5f0; /* Warna hijau sangat muda */
+    transform: translateX(5px);
+    color: #000;
+}
+
+/* Gaya khusus untuk item yang aktif agar lebih menonjol */
+.list-group-item.active {
+    background-color: #198754;
+    border-color: #198754;
+    box-shadow: 0 2px 10px rgba(25, 135, 84, 0.4);
+}
+
+/* Efek sedikit membesar dan lebih cerah pada tombol saat kursor di atasnya */
+.btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* Memberi efek "glow" pada input form saat diklik */
+.form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+/* ========================================================== */
+/* GAYA UNTUK STICKY SIDEBAR NAVIGASI                         */
+/* ========================================================== */
+
+.sidebar-container .card {
+    position: -webkit-sticky; /* Untuk browser Safari */
+    position: sticky;
+    top: 90px; /* Jarak dari atas navbar */
+}

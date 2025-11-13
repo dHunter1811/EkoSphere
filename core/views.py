@@ -225,7 +225,7 @@ def subtopik_detail_view(request, pk):
     # --- LOGIKA UNTUK NAVIGASI ---
     semua_subtopik_terurut = list(
         SubTopik.objects.all().order_by("topik__urutan", "urutan")
-    )  # Ditambahkan order_by
+    )
     try:
         current_index = semua_subtopik_terurut.index(subtopik_aktif)
         subtopik_sebelumnya = (
@@ -237,7 +237,6 @@ def subtopik_detail_view(request, pk):
             else None
         )
     except ValueError:
-        # Jika subtopik_aktif tidak ditemukan (seharusnya tidak terjadi dengan get_object_or_404)
         subtopik_sebelumnya = None
         subtopik_selanjutnya = None
     # --- AKHIR LOGIKA NAVIGASI ---
@@ -277,71 +276,106 @@ def subtopik_detail_view(request, pk):
         "progres_misi_persen": progres_misi_persen,
         "kuis_selesai_count": kuis_selesai_count,
         "total_subtopik_misi": total_subtopik_misi,
-        # --- KIRIM DATA BARU KE TEMPLATE ---
         "completed_materi_ids": completed_materi_ids,
         "is_materi_selesai": is_materi_selesai,
     }
     return render(request, "core/materi_detail.html", context)
 
 
-# --- SISA VIEWS ANDA (SUDAH DIPERBARUI & BENAR) ---
-
-
+# --- 5. FUNGSI KUIS_VIEW TELAH DIPERBARUI ---
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def kuis_view(request, pk):
-    # Logika view kuis (tidak berubah)
     subtopik = get_object_or_404(SubTopik, pk=pk)
     kuis = subtopik.kuis
+
     if request.method == "POST":
         total_pertanyaan = kuis.pertanyaan.count()
         jawaban_benar = 0
-        for pertanyaan in kuis.pertanyaan.all():
+        
+        # --- LOGIKA BARU UNTUK REVIEW ---
+        hasil_review = []
+        semua_pertanyaan = kuis.pertanyaan.all()
+        # --- AKHIR LOGIKA BARU ---
+        
+        for pertanyaan in semua_pertanyaan:
             jawaban_pengguna_id = request.POST.get(f"pertanyaan_{pertanyaan.id}")
             is_correct_answer = False
+            pilihan_pengguna = None
+            pilihan_benar = None
+
+            try:
+                # Ambil jawaban benar dari database
+                pilihan_benar = pertanyaan.pilihan.get(is_benar=True)
+            except PilihanJawaban.DoesNotExist:
+                continue # Lompati soal ini jika tidak ada jawaban benar
+
             if jawaban_pengguna_id:
                 try:
-                    pilihan_benar = pertanyaan.pilihan.get(is_benar=True)
-                    if int(jawaban_pengguna_id) == pilihan_benar.id:
+                    # Ambil pilihan jawaban pengguna
+                    pilihan_pengguna = PilihanJawaban.objects.get(id=jawaban_pengguna_id)
+                    if pilihan_pengguna == pilihan_benar:
                         jawaban_benar += 1
                         is_correct_answer = True
                 except PilihanJawaban.DoesNotExist:
-                    pass
+                    pass # Pilihan tidak valid
+
+            # Simpan ke log (kode Anda yang sudah ada)
             QuizAttemptLog.objects.create(
                 user=request.user, question=pertanyaan, is_correct=is_correct_answer
             )
+            
+            # --- TAMBAHKAN DATA KE LIST REVIEW ---
+            hasil_review.append({
+                'pertanyaan': pertanyaan,
+                'pilihan_pengguna': pilihan_pengguna,
+                'pilihan_benar': pilihan_benar,
+                'is_correct': is_correct_answer
+            })
+            # --- AKHIR TAMBAHAN ---
+
         skor_saat_ini = (
             (jawaban_benar / total_pertanyaan) * 100 if total_pertanyaan > 0 else 0
         )
+
         profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+        
         try:
             hasil_sebelumnya = HasilKuis.objects.get(siswa=request.user, kuis=kuis)
             skor_sebelumnya = hasil_sebelumnya.skor
         except HasilKuis.DoesNotExist:
             skor_sebelumnya = 0.0
+
         HasilKuis.objects.update_or_create(
             siswa=request.user, kuis=kuis, defaults={"skor": skor_saat_ini}
         )
+
+        # ... (Logika penambahan poin Anda tetap sama) ...
         tambahan_poin = 0
         if skor_saat_ini > skor_sebelumnya:
             jawaban_benar_sebelumnya = round((skor_sebelumnya / 100) * total_pertanyaan)
             selisih_jawaban_benar = jawaban_benar - jawaban_benar_sebelumnya
-            tambahan_poin = selisih_jawaban_benar * 10
+            tambahan_poin = selisih_jawaban_benar * 10 
             if tambahan_poin > 0:
                 profil_siswa.total_poin += tambahan_poin
                 profil_siswa.save()
+        
+        # ... (Logika lencana Anda tetap sama) ...
         lencana_baru_didapat = []
         lencana_yang_belum_dimiliki = Lencana.objects.exclude(profilsiswa=profil_siswa)
         for lencana in lencana_yang_belum_dimiliki:
             if profil_siswa.total_poin >= lencana.syarat_poin:
                 profil_siswa.lencana.add(lencana)
                 lencana_baru_didapat.append(lencana)
+
         context = {
             "skor": skor_saat_ini,
             "kuis": kuis,
             "lencana_baru": lencana_baru_didapat,
+            "hasil_review": hasil_review  # <-- KIRIM DATA REVIEW KE TEMPLATE
         }
         return render(request, "core/kuis_hasil.html", context)
+
     context = {"kuis": kuis}
     return render(request, "core/kuis.html", context)
 
@@ -364,7 +398,10 @@ def api_klasifikasi_view(request):
     pertanyaan = PertanyaanArena.objects.filter(tipe="klasifikasi").first()
     if pertanyaan:
         return JsonResponse(pertanyaan.konten_json)
+    
+    # --- PERBAIKAN DI SINI ---
     return JsonResponse({"error": "Data tidak ditemukan"}, status=404)
+    # --- AKHIR PERBAIKAN ---
 
 
 def api_rantai_makanan_view(request):
@@ -373,14 +410,13 @@ def api_rantai_makanan_view(request):
         {"id": 2, "nama": "Udang Kecil", "tipe": "konsumen_1", "memakan": [1]},
         {"id": 3, "nama": "Ikan Haruan", "tipe": "konsumen_2", "memakan": [2]},
         {"id": 4, "nama": "Bangau", "tipe": "konsumen_3", "memakan": [3]},
-    ]}  # Data statis
+    ]}
     return JsonResponse(data_ekosistem)
 
 
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def duel_simbiosis_view(request):
-    # Logika duel simbiosis (tidak berubah)
     pertanyaan_list = PertanyaanArena.objects.filter(tipe="kartu_simbiosis")
     data_untuk_js = []
     for p in pertanyaan_list:
@@ -397,7 +433,6 @@ def duel_simbiosis_view(request):
 @require_POST
 @user_passes_test(is_siswa, login_url="/login/")
 def api_simpan_jawaban_view(request):
-    # Logika simpan jawaban arena (tidak berubah)
     data = json.loads(request.body)
     pertanyaan_id = data.get("pertanyaan_id")
     jawaban_benar = data.get("jawaban_benar")
@@ -422,7 +457,6 @@ def api_simpan_jawaban_view(request):
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def jejak_predator_view(request):
-    # Logika jejak predator (tidak berubah)
     cerita = PertanyaanArena.objects.filter(tipe="cerita_predator").first()
     cerita_json = mark_safe(json.dumps(cerita.konten_json)) if cerita else None
     profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
@@ -437,7 +471,6 @@ def jejak_predator_view(request):
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def progres_view(request):
-    # Logika progres siswa (tidak berubah)
     profil_siswa = get_object_or_404(ProfilSiswa, user=request.user)
     hasil_kuis = HasilKuis.objects.filter(siswa=request.user).order_by("-waktu_selesai")
     semua_lencana = Lencana.objects.all().order_by("syarat_poin")

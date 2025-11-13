@@ -3,7 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings  # Ditambahkan untuk settings.AUTH_USER_MODEL
-
+from ckeditor.fields import RichTextField  # <-- 1. IMPORT DITAMBAHKAN
 
 # Model Pengguna yang bisa jadi Siswa atau Guru
 class User(AbstractUser):
@@ -30,7 +30,11 @@ class Topik(models.Model):
 class SubTopik(models.Model):
     topik = models.ForeignKey(Topik, on_delete=models.CASCADE)
     judul = models.CharField(max_length=200)  # Contoh: "1. Jenis Ekosistem"
-    konten = models.TextField(help_text="Isi konten utama untuk sub-topik ini.")
+    
+    # --- 2. FIELD KONTEN JUGA DI-UPGRADE ---
+    konten = RichTextField(help_text="Isi konten utama untuk sub-topik ini.")
+    # --- AKHIR PERUBAHAN ---
+    
     urutan = models.IntegerField(default=0)
     pembuat = models.ForeignKey(
         User, on_delete=models.CASCADE, limit_choices_to={"role": "Guru"}
@@ -56,6 +60,14 @@ class Kuis(models.Model):
 class Pertanyaan(models.Model):
     kuis = models.ForeignKey(Kuis, on_delete=models.CASCADE, related_name="pertanyaan")
     teks_pertanyaan = models.CharField(max_length=255)
+    
+    # --- 3. FIELD PENJELASAN DI-UPGRADE ---
+    penjelasan = RichTextField(
+        blank=True, 
+        null=True, 
+        help_text="Penjelasan mengapa jawaban ini benar (opsional)."
+    )
+    # --- AKHIR PERUBAHAN ---
 
     def __str__(self):
         return self.teks_pertanyaan
