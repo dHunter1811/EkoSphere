@@ -18,12 +18,8 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            /* =================================
-            PERBAIKAN 1A: MENGATASI FIXED-TOP
-            Menambahkan padding di atas body agar konten tidak tertutup navbar
-            =================================
-            */
-            padding-top: 70px; /* Sesuaikan (misal 70px) dengan tinggi navbar Anda */
+            /* Menambahkan padding di atas body agar konten tidak tertutup navbar */
+            padding-top: 70px; 
         }
     </style>
 </head>
@@ -62,6 +58,7 @@
                         {% if request.user.role == "Siswa" %}
                             <li><a class="dropdown-item" href="{% url 'dashboard' %}"><i class="bi bi-house-door-fill me-2"></i>Dashboard</a></li>
                             <li><a class="dropdown-item" href="{% url 'progres' %}"><i class="bi bi-graph-up me-2"></i>Lihat Progres</a></li>
+                            <li><a class="dropdown-item" href="{% url 'leaderboard' %}"><i class="bi bi-trophy-fill me-2"></i>Papan Peringkat</a></li>
                         {% elif request.user.role == "Guru" %}
                             <li><a class="dropdown-item" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard Guru</a></li>
                         {% endif %}
@@ -101,5 +98,8 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>

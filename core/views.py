@@ -44,16 +44,32 @@ def is_siswa(user):
 @login_required
 def dashboard_view(request):
 
-    # Logika "Pengatur Lalu Lintas"
     if request.user.role == "Guru":
         return redirect("teacher_dashboard")
 
     elif request.user.role == "Siswa":
-        # Logika dashboard siswa (tidak berubah)
         profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+        
+        # Ambil hasil kuis (pengurutan tidak lagi diperlukan untuk grafik)
         hasil_kuis_siswa = HasilKuis.objects.filter(siswa=request.user)
-        semua_subtopik = SubTopik.objects.all()
-        completed_quiz_ids = set(hasil_kuis_siswa.values_list("kuis_id", flat=True))
+        
+        semua_subtopik = SubTopik.objects.all().order_by('topik__urutan', 'urutan')
+        completed_materi_ids = set(
+            UserMateriProgress.objects.filter(user=request.user).values_list('materi_id', flat=True)
+        )
+        
+        first_unlocked_pk = None
+        for subtopik in semua_subtopik:
+            if subtopik.id not in completed_materi_ids:
+                first_unlocked_pk = subtopik.pk
+                break
+        
+        if first_unlocked_pk is None and semua_subtopik.exists():
+            first_unlocked_pk = semua_subtopik.last().pk
+            
+        total_materi_count = semua_subtopik.count()
+        semua_materi_selesai = (len(completed_materi_ids) == total_materi_count)
+
         lencana_selanjutnya = (
             Lencana.objects.exclude(id__in=profil_siswa.lencana.all())
             .order_by("syarat_poin")
@@ -66,15 +82,25 @@ def dashboard_view(request):
             ) * 100
             if progres_persen > 100:
                 progres_persen = 100
-        info_items = InfoEkosistem.objects.order_by("?")
+        
+        info_items = InfoEkosistem.objects.order_by("?")[:6]
+        siswa_teratas = ProfilSiswa.objects.filter(user__role="Siswa").order_by('-total_poin')[:3]
+
+        # --- LOGIKA GRAFIK TELAH DIHAPUS DARI SINI ---
+
         context = {
-            "daftar_materi": semua_subtopik,
             "profil_siswa": profil_siswa,
             "hasil_kuis_list": hasil_kuis_siswa,
-            "completed_quiz_ids": completed_quiz_ids,
             "lencana_selanjutnya": lencana_selanjutnya,
             "progres_persen": progres_persen,
             "info_items": info_items,
+            "daftar_materi": semua_subtopik, 
+            "completed_materi_ids": completed_materi_ids,
+            "first_unlocked_pk": first_unlocked_pk,
+            "semua_materi_selesai": semua_materi_selesai,
+            "siswa_teratas": siswa_teratas,
+            
+            # --- DATA GRAFIK TELAH DIHAPUS DARI CONTEXT ---
         }
         return render(request, "core/dashboard.html", context)
 
@@ -417,15 +443,123 @@ def api_rantai_makanan_view(request):
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def duel_simbiosis_view(request):
-    pertanyaan_list = PertanyaanArena.objects.filter(tipe="kartu_simbiosis")
-    data_untuk_js = []
-    for p in pertanyaan_list:
-        konten = p.konten_json
-        konten["id"] = p.id
-        data_untuk_js.append(konten)
-    pertanyaan_json = mark_safe(json.dumps(data_untuk_js))
+    
+    try:
+        materi_asal = SubTopik.objects.get(judul="1.2: Membedah Interaksi Makhluk Hidup di Rawa")
+        materi_asal_pk = materi_asal.pk
+    except SubTopik.DoesNotExist:
+        materi_asal_pk = None
+
+    sumber_akses = request.GET.get('dari', 'materi')
+
+    # --- UPDATE DATA GAME DENGAN GAMBAR LOKAL PER SOAL ---
+    game_data = [
+        {
+            "level": 1,
+            "questions": [
+                {
+                    "id": 101,
+                    "image_url": "/static/images/duel_simbiosis/level1_soal1.jpg", # Bakteri
+                    "soal": "Bakteri pengikat nitrogen yang hidup di bintil akar tanaman polong-polongan.",
+                    "jawaban_benar": "Mutualisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                },
+                {
+                    "id": 102,
+                    "image_url": "/static/images/duel_simbiosis/level1_soal2.jpg", # Cacing Pita
+                    "soal": "Cacing pita yang hidup di dalam usus manusia dan menyerap sari makanan.",
+                    "jawaban_benar": "Parasitisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                }
+            ]
+        },
+        {
+            "level": 2,
+            "questions": [
+                {
+                    "id": 201,
+                    "image_url": "/static/images/duel_simbiosis/level2_soal1.jpg", # Hiu Remora
+                    "soal": "Ikan remora yang berenang di dekat ikan hiu untuk mendapatkan sisa makanan.",
+                    "jawaban_benar": "Komensalisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                },
+                {
+                    "id": 202,
+                    "image_url": "/static/images/duel_simbiosis/level2_soal2.jpg", # Tali Putri
+                    "soal": "Tali putri yang melilit tanaman inang dan mengambil nutrisinya.",
+                    "jawaban_benar": "Parasitisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                }
+            ]
+        },
+        {
+            "level": 3,
+            "questions": [
+                {
+                    "id": 301,
+                    "image_url": "/static/images/duel_simbiosis/level3_soal1.jpg", # Lebah Bunga
+                    "soal": "Lebah yang mengambil nektar dari bunga sambil membantu penyerbukan.",
+                    "jawaban_benar": "Mutualisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                },
+                {
+                    "id": 302,
+                    "image_url": "/static/images/duel_simbiosis/level3_soal2.jpg", # Anggrek
+                    "soal": "Tanaman anggrek yang menempel pada pohon mangga untuk mendapatkan cahaya matahari.",
+                    "jawaban_benar": "Komensalisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                }
+            ]
+        },
+        {
+            "level": 4,
+            "questions": [
+                {
+                    "id": 401,
+                    "image_url": "/static/images/duel_simbiosis/level4_soal1.jpg", # Nyamuk
+                    "soal": "Nyamuk yang menggigit kulit manusia untuk menghisap darah.",
+                    "jawaban_benar": "Parasitisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                },
+                {
+                    "id": 402,
+                    "image_url": "/static/images/duel_simbiosis/level4_soal2.jpg", # Jalak Kerbau
+                    "soal": "Burung jalak yang memakan kutu di punggung kerbau.",
+                    "jawaban_benar": "Mutualisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                }
+            ]
+        },
+        {
+            "level": 5,
+            "questions": [
+                {
+                    "id": 501,
+                    "image_url": "/static/images/duel_simbiosis/level5_soal1.jpg", # Sirih
+                    "soal": "Sirih yang merambat pada tumbuhan inangnya untuk mencari cahaya matahari.",
+                    "jawaban_benar": "Komensalisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                },
+                {
+                    "id": 502,
+                    "image_url": "/static/images/duel_simbiosis/level5_soal2.jpg", # Kutu Rambut
+                    "soal": "Kutu rambut yang hidup di kepala manusia.",
+                    "jawaban_benar": "Parasitisme",
+                    "pilihan": ["Mutualisme", "Komensalisme", "Parasitisme"]
+                }
+            ]
+        },
+    ]
+    # --- AKHIR UPDATE ---
+
     profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
-    context = {"pertanyaan_json": pertanyaan_json, "profil_siswa": profil_siswa}
+
+    context = {
+        "game_data_json": mark_safe(json.dumps(game_data)),
+        "profil_siswa": profil_siswa,
+        "materi_asal_pk": materi_asal_pk,
+        "sumber_akses": sumber_akses, 
+    }
     return render(request, "core/arena_duel_simbiosis.html", context)
 
 
@@ -454,16 +588,105 @@ def api_simpan_jawaban_view(request):
         )
 
 
+# Di dalam core/views.py
+
 @login_required
 @user_passes_test(is_siswa, login_url="/login/")
 def jejak_predator_view(request):
-    cerita = PertanyaanArena.objects.filter(tipe="cerita_predator").first()
-    cerita_json = mark_safe(json.dumps(cerita.konten_json)) if cerita else None
+    
+    try:
+        materi_asal = SubTopik.objects.get(judul="1.2: Membedah Interaksi Makhluk Hidup di Rawa")
+        materi_asal_pk = materi_asal.pk
+    except SubTopik.DoesNotExist:
+        materi_asal_pk = None
+
+    sumber_akses = request.GET.get('dari', 'materi')
+
+    game_data = [
+        {
+            "level": 1,
+            "title": "Misteri di Tepi Sungai",
+            "steps": [
+                {
+                    "text": "Di tepi sungai yang dikelilingi rimbunnya pohon bakau, seekor biawak air sedang mengintai sarang burung bangau untuk memakan telur-telurnya.",
+                    "image_url": "/static/images/jejak_predator/level1_step1.jpg", # Gambar 1
+                    "question": "Dalam cerita ini, siapakah yang berperan sebagai predator?",
+                    "options": ["Burung Bangau", "Biawak Air", "Telur", "Pohon Bakau"],
+                    "correct_answer": "Biawak Air"
+                },
+                {
+                    "text": "Sang biawak berhasil mendapatkan telur tersebut. Namun, saat ia lengah, seekor elang rawa yang lebih besar mengincarnya dari atas...",
+                    "image_url": "/static/images/jejak_predator/level1_step2.jpg", # Gambar 2
+                    "question": None
+                },
+                {
+                    "text": "Dengan cepat, elang rawa itu menukik dan menyambar biawak air tersebut!",
+                    "image_url": "/static/images/jejak_predator/level1_step3.jpg", # Gambar 3
+                    "question": "Siapa yang menjadi konsumen puncak dalam rantai makanan pendek ini?",
+                    "options": ["Burung Bangau", "Biawak Air", "Elang Rawa"],
+                    "correct_answer": "Elang Rawa"
+                }
+            ]
+        },
+        {
+            "level": 2,
+            "title": "Penyergapan Ikan Toman",
+            "steps": [
+                {
+                    "text": "Di kedalaman air rawa yang tenang, seekor katak sedang berenang santai di antara akar eceng gondok.",
+                    "image_url": "/static/images/jejak_predator/level2_step1.jpg",
+                    "question": None
+                },
+                {
+                    "text": "Tiba-tiba, bayangan gelap melesat! Ikan Toman dengan gigi tajamnya menyambar katak tersebut.",
+                    "image_url": "/static/images/jejak_predator/level2_step2.jpg",
+                    "question": "Hubungan antara Ikan Toman dan Katak disebut...",
+                    "options": ["Kompetisi", "Predasi", "Mutualisme", "Parasitisme"],
+                    "correct_answer": "Predasi"
+                },
+                {
+                    "text": "Ikan Toman adalah predator ganas. Jika populasi katak habis dimakan, apa yang mungkin terjadi pada populasi Toman?",
+                    "image_url": "/static/images/jejak_predator/level2_step3.jpg",
+                    "question": "Analisis dampaknya:",
+                    "options": ["Populasi Toman akan meningkat pesat", "Populasi Toman akan menurun karena kurang makanan", "Tidak berpengaruh apa-apa"],
+                    "correct_answer": "Populasi Toman akan menurun karena kurang makanan"
+                }
+            ]
+        },
+        {
+            "level": 3,
+            "title": "Si Pemburu Malam",
+            "steps": [
+                {
+                    "text": "Malam hari di rawa gambut. Seekor tikus rawa keluar mencari makan. Ia tidak sadar ada sepasang mata mengawasinya.",
+                    "image_url": "/static/images/jejak_predator/level3_step1.jpg",
+                    "question": None
+                },
+                {
+                    "text": "Seekor Ular Sanca (Python) meluncur tanpa suara dan melilit tikus itu.",
+                    "image_url": "/static/images/jejak_predator/level3_step2.jpg",
+                    "question": "Dalam skenario ini, Tikus berperan sebagai...",
+                    "options": ["Predator", "Mangsa (Prey)", "Produsen", "Pengurai"],
+                    "correct_answer": "Mangsa (Prey)"
+                },
+                 {
+                    "text": "Ular tersebut kemudian beristirahat untuk mencerna makanannya.",
+                    "image_url": "/static/images/jejak_predator/level3_step3.jpg",
+                    "question": "Ular mengendalikan populasi tikus agar tidak meledak. Ini adalah fungsi predator sebagai...",
+                    "options": ["Pengganggu ekosistem", "Penyeimbang populasi (Biocontrol)", "Perusak tanaman"],
+                    "correct_answer": "Penyeimbang populasi (Biocontrol)"
+                }
+            ]
+        }
+    ]
+
     profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+
     context = {
-        "cerita_json": cerita_json,
-        "pertanyaan_id": cerita.id if cerita else None,
+        "game_data_json": mark_safe(json.dumps(game_data)),
         "profil_siswa": profil_siswa,
+        "materi_asal_pk": materi_asal_pk,
+        "sumber_akses": sumber_akses,
     }
     return render(request, "core/arena_jejak_predator.html", context)
 
@@ -507,3 +730,314 @@ def batalkan_materi_selesai_view(request, pk):
             request, f"Materi '{materi.judul}' ditandai sebagai 'Belum Selesai'."
         )
     return redirect("subtopik_detail", pk=pk)
+
+# Di dalam core/views.py
+# ... (pastikan json, mark_safe, ProfilSiswa, SubTopik sudah diimpor di atas) ...
+
+@login_required
+@user_passes_test(is_siswa, login_url="/login/")
+def klasifikasi_view(request):
+    
+    # 1. Dapatkan ID materi 1.1
+    try:
+        materi_asal = SubTopik.objects.get(judul="1.1: Mengenal Penghuni Lahan Basah")
+        materi_asal_pk = materi_asal.pk
+    except SubTopik.DoesNotExist:
+        materi_asal_pk = None
+
+    # 2. Data Game 5 Level (DENGAN GAMBAR LOKAL)
+    game_data = [
+        {
+            "level": 1,
+            "image_url": "/static/images/klasifikasi_komponen/level1.jpg", # Pastikan file ini ada
+            "items": [
+                {"nama": "Ikan Papuyu", "tipe": "biotik"},
+                {"nama": "Tanaman Purun", "tipe": "biotik"},
+                {"nama": "Bekantan", "tipe": "biotik"},
+                {"nama": "Tanah Rawa", "tipe": "abiotik"},
+                {"nama": "Cahaya Matahari", "tipe": "abiotik"},
+                {"nama": "Air Gambut", "tipe": "abiotik"},
+            ]
+        },
+        {
+            "level": 2,
+            "image_url": "/static/images/klasifikasi_komponen/level2.jpg",
+            "items": [
+                {"nama": "Ikan Haruan", "tipe": "biotik"},
+                {"nama": "Suhu Udara", "tipe": "abiotik"},
+                {"nama": "Siput Air", "tipe": "biotik"},
+                {"nama": "Kelembapan", "tipe": "abiotik"},
+                {"nama": "Bakteri", "tipe": "biotik"},
+            ]
+        },
+        {
+            "level": 3,
+            "image_url": "/static/images/klasifikasi_komponen/level3.jpg",
+            "items": [
+                {"nama": "Burung Bangau", "tipe": "biotik"},
+                {"nama": "Fitoplankton", "tipe": "biotik"},
+                {"nama": "Batu", "tipe": "abiotik"},
+                {"nama": "Jamur", "tipe": "biotik"},
+                {"nama": "Oksigen (O2)", "tipe": "abiotik"},
+            ]
+        },
+        {
+            "level": 4,
+            "image_url": "/static/images/klasifikasi_komponen/level4.jpg",
+            "items": [
+                {"nama": "Pohon Galam", "tipe": "biotik"},
+                {"nama": "Serangga Air", "tipe": "biotik"},
+                {"nama": "Angin", "tipe": "abiotik"},
+                {"nama": "Ikan Sepat", "tipe": "biotik"},
+                {"nama": "Nutrien (Hara)", "tipe": "abiotik"},
+            ]
+        },
+        {
+            "level": 5,
+            "image_url": "/static/images/klasifikasi_komponen/level5.jpg",
+            "items": [
+                {"nama": "Biawak Air", "tipe": "biotik"},
+                {"nama": "pH Tanah", "tipe": "abiotik"},
+                {"nama": "Pohon Rumbia", "tipe": "biotik"},
+                {"nama": "Elang Rawa", "tipe": "biotik"},
+                {"nama": "Mineral", "tipe": "abiotik"},
+            ]
+        },
+    ]
+
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+
+    context = {
+        "game_data_json": mark_safe(json.dumps(game_data)),
+        "profil_siswa": profil_siswa,
+        "materi_asal_pk": materi_asal_pk,
+    }
+    return render(request, "core/arena_klasifikasi.html", context)
+
+@login_required
+@user_passes_test(is_siswa, login_url="/login/") # Pastikan hanya siswa yang bisa lihat
+def leaderboard_view(request):
+    
+    # 1. Ambil semua profil siswa, urutkan dari poin tertinggi
+    semua_profil_siswa = ProfilSiswa.objects.filter(user__role="Siswa").order_by('-total_poin')
+
+    # 2. Ubah queryset menjadi list agar kita bisa cari ranking
+    daftar_peringkat = list(semua_profil_siswa)
+
+    # 3. Cari tahu peringkat siswa yang sedang login
+    peringkat_saat_ini = 0
+    profil_saat_ini = request.user.profilsiswa # Asumsi relasi 'profilsiswa'
+    
+    for i, profil in enumerate(daftar_peringkat):
+        if profil.user == request.user:
+            peringkat_saat_ini = i + 1 # i+1 karena list index dimulai dari 0
+            break
+
+    context = {
+        'daftar_peringkat': daftar_peringkat, # Daftar lengkap untuk di-loop
+        'peringkat_saat_ini': peringkat_saat_ini, # Angka (misal: 5)
+        'profil_saat_ini': profil_saat_ini, # Objek profil (untuk poin)
+    }
+    return render(request, "core/leaderboard.html", context)
+
+@login_required
+@user_passes_test(is_siswa, login_url="/login/")
+def ujian_akhir_view(request):
+    
+    # --- Cek Prasyarat ---
+    total_materi = SubTopik.objects.count()
+    materi_selesai = UserMateriProgress.objects.filter(user=request.user).count()
+    
+    if materi_selesai < total_materi:
+        messages.error(request, "Anda harus menyelesaikan SEMUA materi ekspedisi sebelum bisa mengambil Ujian Akhir.")
+        return redirect('dashboard')
+    
+    # Ambil (misal) 20 soal acak dari SEMUA kuis
+    JUMLAH_SOAL = 20 
+    
+    if request.method == "POST":
+        # --- LOGIKA PENILAIAN (POST) ---
+        
+        # Ambil ID pertanyaan dari form yang dikirim
+        pertanyaan_ids = [key.split('_')[1] for key in request.POST if key.startswith('pertanyaan_')]
+        semua_pertanyaan = Pertanyaan.objects.filter(id__in=pertanyaan_ids).prefetch_related('pilihan')
+        
+        total_pertanyaan = semua_pertanyaan.count()
+        jawaban_benar = 0
+        hasil_review = []
+
+        for pertanyaan in semua_pertanyaan:
+            jawaban_pengguna_id = request.POST.get(f"pertanyaan_{pertanyaan.id}")
+            is_correct_answer = False
+            pilihan_pengguna = None
+            pilihan_benar = None
+
+            try:
+                pilihan_benar = pertanyaan.pilihan.get(is_benar=True)
+            except PilihanJawaban.DoesNotExist:
+                continue 
+
+            if jawaban_pengguna_id:
+                try:
+                    pilihan_pengguna = PilihanJawaban.objects.get(id=jawaban_pengguna_id)
+                    if pilihan_pengguna == pilihan_benar:
+                        jawaban_benar += 1
+                        is_correct_answer = True
+                except PilihanJawaban.DoesNotExist:
+                    pass 
+
+            # Simpan ke log
+            QuizAttemptLog.objects.create(
+                user=request.user, question=pertanyaan, is_correct=is_correct_answer
+            )
+            
+            hasil_review.append({
+                'pertanyaan': pertanyaan,
+                'pilihan_pengguna': pilihan_pengguna,
+                'pilihan_benar': pilihan_benar,
+                'is_correct': is_correct_answer
+            })
+
+        skor_saat_ini = (jawaban_benar / total_pertanyaan) * 100 if total_pertanyaan > 0 else 0
+        
+        # Beri Poin Bonus & Lencana Juara
+        profil_siswa = request.user.profilsiswa
+        lencana_baru_didapat = []
+        if skor_saat_ini >= 75: # Batas lulus 75
+            profil_siswa.total_poin += 100 # Bonus 100 poin karena lulus
+            profil_siswa.save()
+            
+            try:
+                # (Pastikan Anda telah membuat lencana ini di admin)
+                lencana_juara = Lencana.objects.get(nama="Juara EkoSphere")
+                if lencana_juara not in profil_siswa.lencana.all():
+                    profil_siswa.lencana.add(lencana_juara)
+                    lencana_baru_didapat.append(lencana_juara)
+            except Lencana.DoesNotExist:
+                print("LOG: Lencana 'Juara EkoSphere' tidak ditemukan di database.")
+        
+        # Render halaman hasil kuis yang sudah ada
+        context = {
+            "skor": skor_saat_ini,
+            "kuis": {"judul": "Ujian Akhir EkoSphere"}, # Buat objek kuis tiruan
+            "lencana_baru": lencana_baru_didapat,
+            "hasil_review": hasil_review,
+        }
+        return render(request, "core/kuis_hasil.html", context)
+
+    else:
+        # --- LOGIKA TAMPILKAN SOAL (GET) ---
+        daftar_soal = Pertanyaan.objects.prefetch_related('pilihan').order_by('?')[:JUMLAH_SOAL]
+        
+        context = {
+            'kuis': {'judul': 'Ujian Akhir EkoSphere'},
+            'daftar_soal': daftar_soal
+        }
+        return render(request, "core/ujian_akhir.html", context)
+    
+@login_required
+@require_POST
+@user_passes_test(is_siswa, login_url="/login/")
+def api_simpan_poin_view(request):
+    data = json.loads(request.body)
+    poin_didapat = data.get("poin_didapat", 0)
+
+    if poin_didapat > 0:
+        try:
+            profil_siswa = request.user.profilsiswa
+            profil_siswa.total_poin += poin_didapat
+            profil_siswa.save()
+            return JsonResponse(
+                {"status": "sukses", "total_poin_baru": profil_siswa.total_poin}
+            )
+        except ProfilSiswa.DoesNotExist:
+            return JsonResponse(
+                {"status": "gagal", "error": "Profil siswa tidak ditemukan"}, status=404
+            )
+    return JsonResponse(
+        {"status": "gagal", "error": "Tidak ada poin untuk ditambahkan"}, status=400
+    )
+
+# Di dalam core/views.py
+
+@login_required
+@user_passes_test(is_siswa, login_url="/login/")
+def energy_flow_view(request):
+    
+    # Cari PK materi 1.3 untuk tombol "Kembali"
+    try:
+        materi_asal = SubTopik.objects.get(judul="1.3: Membangun Jaring-jaring Makanan Lahan Basah")
+        materi_asal_pk = materi_asal.pk
+    except SubTopik.DoesNotExist:
+        materi_asal_pk = None
+
+    # Data untuk 5 Level Rantai Makanan
+    game_data = [
+        {
+            "level": 1,
+            "title": "Rantai Rawa Sederhana",
+            # GANTI DENGAN GAMBAR LOKAL
+            "image_url": "/static/images/energy_flow/level1.jpg", 
+            "organisms": [
+                {"id": 1, "nama": "Fitoplankton", "tipe": "produsen", "memakan": []},
+                {"id": 2, "nama": "Udang Kecil", "tipe": "konsumen_1", "memakan": [1]},
+                {"id": 3, "nama": "Ikan Haruan", "tipe": "konsumen_2", "memakan": [2]}
+            ]
+        },
+        {
+            "level": 2,
+            "title": "Jalur Burung",
+            # GANTI DENGAN GAMBAR LOKAL
+            "image_url": "/static/images/energy_flow/level2.jpg", 
+            "organisms": [
+                {"id": 1, "nama": "Tanaman Purun", "tipe": "produsen", "memakan": []},
+                {"id": 2, "nama": "Siput Air", "tipe": "konsumen_1", "memakan": [1]},
+                {"id": 3, "nama": "Ikan Papuyu", "tipe": "konsumen_2", "memakan": [2]},
+                {"id": 4, "nama": "Burung Bangau", "tipe": "konsumen_3", "memakan": [3]}
+            ]
+        },
+        {
+            "level": 3,
+            "title": "Puncak Rantai Makanan",
+            # GANTI DENGAN GAMBAR LOKAL
+            "image_url": "/static/images/energy_flow/level3.jpg",
+            "organisms": [
+                {"id": 1, "nama": "Rumput Rawa", "tipe": "produsen", "memakan": []},
+                {"id": 2, "nama": "Belalang", "tipe": "konsumen_1", "memakan": [1]},
+                {"id": 3, "nama": "Katak", "tipe": "konsumen_2", "memakan": [2]},
+                {"id": 4, "nama": "Biawak Air", "tipe": "konsumen_3", "memakan": [3]}
+            ]
+        },
+        {
+            "level": 4,
+            "title": "Jejak Mamalia",
+            # GANTI DENGAN GAMBAR LOKAL
+            "image_url": "/static/images/energy_flow/level4.jpg",
+            "organisms": [
+                {"id": 1, "nama": "Pohon Rumbia", "tipe": "produsen", "memakan": []},
+                {"id": 2, "nama": "Bekantan", "tipe": "konsumen_1", "memakan": [1]},
+                {"id": 3, "nama": "Manusia", "tipe": "konsumen_2", "memakan": [2]}
+            ]
+        },
+        {
+            "level": 5,
+            "title": "Penguasa Udara",
+            # GANTI DENGAN GAMBAR LOKAL
+            "image_url": "/static/images/energy_flow/level5.jpg",
+            "organisms": [
+                {"id": 1, "nama": "Padi Rawa", "tipe": "produsen", "memakan": []},
+                {"id": 2, "nama": "Tikus", "tipe": "konsumen_1", "memakan": [1]},
+                {"id": 3, "nama": "Ular Sawah", "tipe": "konsumen_2", "memakan": [2]},
+                {"id": 4, "nama": "Elang Rawa", "tipe": "konsumen_3", "memakan": [3]}
+            ]
+        }
+    ]
+
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+
+    context = {
+        "game_data_json": mark_safe(json.dumps(game_data)),
+        "profil_siswa": profil_siswa,
+        "materi_asal_pk": materi_asal_pk,
+    }
+    return render(request, "core/arena_energy_flow.html", context)

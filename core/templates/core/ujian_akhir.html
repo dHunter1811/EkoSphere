@@ -1,0 +1,192 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .quiz-card {
+        display: none; opacity: 0; transform: scale(0.98);
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        border: none; border-radius: 15px;
+        visibility: hidden; position: absolute; width: 100%;
+    }
+    .quiz-card.active {
+        display: block; opacity: 1; transform: scale(1);
+        visibility: visible; position: relative; 
+    }
+    #quiz-container { position: relative; }
+    .answer-option {
+        display: block; width: 100%; padding: 1.25rem; margin-bottom: 0.75rem;
+        border: 2px solid #e0e0e0; border-radius: 10px; background-color: #fff;
+        text-align: left; font-size: 1.05rem; transition: all 0.2s ease; cursor: pointer;
+    }
+    .answer-option:hover { border-color: #0d6efd; background-color: #f8f9fa; }
+    .answer-option input[type="radio"]:checked + label {
+        border-color: #198754; background-color: #e6f9f0;
+        font-weight: bold; color: #198754;
+        box-shadow: 0 0 10px rgba(25, 135, 84, 0.2);
+    }
+    .answer-option input[type="radio"] { display: none; }
+    #quiz-nav-container {
+        display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        background-color: #fff; padding: 1rem; border-radius: 10px;
+        margin-top: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .quiz-nav-box {
+        width: 40px; height: 40px; border: 2px solid #ddd; border-radius: 5px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; cursor: pointer; transition: all 0.2s ease;
+        background-color: #fff; color: #6c757d;
+    }
+    .quiz-nav-box:hover { background-color: #f0f0f0; border-color: #aaa; }
+    
+    .quiz-nav-box.active {
+        background-color: #fff; border-color: #0d6efd;
+        color: #0d6efd; box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+    }
+    .quiz-nav-box.answered {
+        background-color: #198754; border-color: #198754;
+        color: white; box-shadow: none;
+    }
+    .quiz-nav-box.answered.active {
+        background-color: #198754; border-color: #198754;
+        color: white; box-shadow: 0 0 8px rgba(25, 135, 84, 0.5);
+    }
+</style>
+
+<div class="container text-dark mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+
+            <form method="post" action="{% url 'ujian_akhir' %}">
+                {% csrf_token %}
+
+                <div id="quiz-container">
+                    {% for pertanyaan in daftar_soal %}
+                    <div class="card quiz-card shadow-lg {% if forloop.first %}active{% endif %}" id="card-{{ forloop.counter0 }}">
+                        
+                        <div class="card-header bg-danger text-white">
+                            <h3 class="mb-0">{{ kuis.judul }}</h3>
+                        </div>
+                        
+                        <div class="card-body p-4 p-md-5">
+                            <p class="text-muted fs-5">Pertanyaan {{ forloop.counter }} dari {{ daftar_soal.count }}</p>
+                            <h4 class="fw-bold mb-4" style="min-height: 80px;">{{ pertanyaan.teks_pertanyaan }}</h4>
+                            
+                            <div class="answer-options-container">
+                                {% for pilihan in pertanyaan.pilihan.all %}
+                                <div class="answer-option">
+                                    <input type="radio" 
+                                           name="pertanyaan_{{ pertanyaan.id }}" 
+                                           id="pilihan_{{ pilihan.id }}" 
+                                           value="{{ pilihan.id }}" 
+                                           
+                                           data-nav-id="nav-{{ forloop.parentloop.counter0 }}">
+                                           <label class="mb-0 w-100" for="pilihan_{{ pilihan.id }}">
+                                        {{ pilihan.teks_jawaban }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center p-4">
+                            {% if not forloop.first %}
+                            <button type="button" class="btn btn-outline-secondary btn-prev" data-index="{{ forloop.counter0 }}">
+                                <i class="bi bi-arrow-left"></i> Sebelumnya
+                            </button>
+                            {% else %}
+                                <span></span> 
+                            {% endif %}
+                            
+                            {% if not forloop.last %}
+                            <button type="button" class="btn btn-primary btn-next" data-index="{{ forloop.counter0 }}">
+                                Selanjutnya <i class="bi bi-arrow-right"></i>
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle-fill"></i> Selesai & Kirim Ujian
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="quiz-nav-container" class="shadow-sm">
+                    <p class="w-100 text-center text-muted mb-2">Navigasi Soal</p>
+                    {% for pertanyaan in daftar_soal %}
+                    <button type="button" 
+                            class="quiz-nav-box {% if forloop.first %}active{% endif %}" 
+                            data-index="{{ forloop.counter0 }}" 
+                            id="nav-{{ forloop.counter0 }}">
+                        {{ forloop.counter }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+            </form>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentQuestionIndex = 0;
+        const allCards = document.querySelectorAll('.quiz-card');
+        const allNavs = document.querySelectorAll('.quiz-nav-box');
+        
+        function showQuestion(index) {
+            allCards[currentQuestionIndex].classList.remove('active');
+            allNavs[currentQuestionIndex].classList.remove('active');
+            
+            allCards[index].classList.add('active');
+            allNavs[index].classList.add('active');
+            
+            currentQuestionIndex = index;
+        }
+
+        document.querySelectorAll('.btn-next').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index + 1);
+            });
+        });
+
+        document.querySelectorAll('.btn-prev').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index - 1);
+            });
+        });
+
+        allNavs.forEach(navBox => {
+            navBox.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                showQuestion(index);
+            });
+        });
+        
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    const navId = this.dataset.navId;
+                    document.getElementById(navId).classList.add('answered');
+                }
+            });
+        });
+        
+        document.querySelectorAll('.answer-option').forEach(card => {
+            card.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="row text-dark mt-4">
@@ -52,49 +53,67 @@
                 </div>
 
                 {% if subtopik_aktif.judul == "1.3: Membangun Jaring-jaring Makanan Lahan Basah" %}
-                <div class="card text-dark mt-4">
-                    <div class="card-header bg-info">
-                        <h4 class="mb-0">Simulasi: Energy Flow Builder</h4>
-                    </div>
-                    <div class="card-body">
-                        <div id="rantai-terbangun" class="alert alert-success text-center fs-5">Rantai Makanan: ...
-                        </div>
-                        <p id="instruksi-simulasi" class="text-center fw-bold">Ketuk organisme yang benar sesuai
-                            instruksi.</p>
-                        <div id="pilihan-organisme" class="d-flex justify-content-around p-3 border rounded"></div>
-                    </div>
-                </div>
-
-                {% elif subtopik_aktif.judul == "1.1: Mengenal Penghuni Lahan Basah" %}
+                
                 <div class="card text-dark mt-4">
                     <div class="card-header bg-warning">
                         <h4 class="mb-0">Uji Pemahaman Cepat: Klasifikasi Komponen</h4>
                     </div>
                     <div class="card-body">
-                        <p>Seret setiap item di bawah ini ke dalam kotak yang benar, lalu tekan tombol "Cek Jawaban".
-                        </p>
+                        <p>Seret setiap item di bawah ini ke dalam kotak yang benar, lalu tekan tombol "Cek Jawaban".</p>
                         <div id="items-container" class="d-flex flex-wrap p-2 border rounded mb-3"></div>
                         <div class="row">
                             <div class="col">
-                                <div id="biotik" class="p-4 border rounded bg-light text-center drop-zone"
-                                    style="min-height: 150px;">
+                                <div id="biotik" class="p-4 border rounded bg-light text-center drop-zone" style="min-height: 150px;">
                                     <h5>Biotik</h5>
                                 </div>
                             </div>
                             <div class="col">
-                                <div id="abiotik" class="p-4 border rounded bg-light text-center drop-zone"
-                                    style="min-height: 150px;">
+                                <div id="abiotik" class="p-4 border rounded bg-light text-center drop-zone" style="min-height: 150px;">
                                     <h5>Abiotik</h5>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-center mt-3"><button id="check-button" class="btn btn-primary">Cek
-                                Jawaban</button>
+                        <div class="text-center mt-3">
+                            <button id="check-button" class="btn btn-primary">Cek Jawaban</button>
                             <div id="result-container" class="mt-2 fw-bold"></div>
                         </div>
                     </div>
                 </div>
 
+                <div class="card border-primary shadow-lg my-5">
+                    <div class="card-header bg-primary text-white">
+                        <h3><i class="bi bi-joystick"></i> E. Tugas dan Aktivitas di EkoSphere</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Untuk memperkuat pemahaman Anda, selesaikan tugas berikut di platform EkoSphere:</p>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Pelajari Modul Interaktif:</strong> Pastikan Anda telah membaca dan memahami seluruh materi di halaman ini.</li>
+                            <li class="list-group-item"><strong>Selesaikan Tantangan:</strong> Masuk ke "Arena Interaktif" dan taklukkan "Simulasi: Energy Flow Builder"!</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                             <a href="{% url 'energy_flow_arena' %}" class="btn btn-info btn-lg">Mulai Simulasi Energy Flow Builder</a>
+                        </div>
+                    </div>
+                </div>
+
+                {% elif subtopik_aktif.judul == "1.1: Mengenal Penghuni Lahan Basah" %}
+                
+                <div class="card border-primary shadow-lg my-5">
+                    <div class="card-header bg-primary text-white">
+                        <h3><i class="bi bi-joystick"></i> Tugas dan Aktivitas di EkoSphere</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Untuk memperkuat pemahaman Anda, selesaikan tugas berikut di platform EkoSphere:</p>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Pelajari Modul Interaktif:</strong> Pastikan Anda telah membaca dan memahami seluruh materi di halaman ini.</li>
+                            <li class="list-group-item"><strong>Selesaikan Tantangan:</strong> Masuk ke "Arena Interaktif" dan taklukkan mini-game <strong>"Klasifikasi Komponen Rawa"</strong>. Seret setiap item ke dalam kategori yang tepat!</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                             <a href="{% url 'klasifikasi_arena' %}" class="btn btn-primary btn-lg">Masuk ke Arena Interaktif</a>
+                        </div>
+                    </div>
+                </div>
+                
                 {% elif subtopik_aktif.judul == "1.2: Membedah Interaksi Makhluk Hidup di Rawa" %}
                 <div class="card border-primary shadow-lg my-5">
                     <div class="card-header bg-primary text-white">
@@ -137,9 +156,10 @@
                     </a>
                     {% endif %}
                 </div>
+
             </div>
 
-            <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="card-footer d-flex justify-content-center align-items-center">
                 {% if subtopik_sebelumnya %}
                 <a href="{% url 'subtopik_detail' pk=subtopik_sebelumnya.pk %}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Sebelumnya
@@ -147,9 +167,11 @@
                 {% else %}
                 <a href="#" class="btn btn-secondary disabled"><i class="bi bi-arrow-left"></i> Sebelumnya</a>
                 {% endif %}
+                
                 {% if subtopik_aktif.kuis %}
                 <a href="{% url 'kuis' pk=subtopik_aktif.pk %}" class="btn btn-primary btn-lg mx-3">Mulai Kuis!</a>
                 {% endif %}
+                
                 {% if subtopik_selanjutnya %}
                 <a href="{% url 'subtopik_detail' pk=subtopik_selanjutnya.pk %}" class="btn btn-secondary">
                     Selanjutnya <i class="bi bi-arrow-right"></i>
@@ -164,156 +186,72 @@
 
 {% if subtopik_aktif.judul == "1.1: Mengenal Penghuni Lahan Basah" %}
 <script>
+    // Tidak ada script khusus di sini lagi
+</script>
+
+{% elif subtopik_aktif.judul == "1.3: Membangun Jaring-jaring Makanan Lahan Basah" %}
+<script>
     document.addEventListener('DOMContentLoaded', function () {
+        // --- Logika Klasifikasi Komponen (Dipindahkan ke sini) ---
         const itemsContainer = document.getElementById('items-container');
         const dropZones = document.querySelectorAll('.drop-zone');
         const checkButton = document.getElementById('check-button');
         const resultContainer = document.getElementById('result-container');
         let draggedItem = null;
 
-        fetch("{% url 'api_klasifikasi' %}")
-            .then(response => response.json())
-            .then(data => {
-                if (data.items) {
-                    data.items.forEach(itemData => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'p-2 m-1 border rounded bg-white draggable-item';
-                        itemDiv.innerText = itemData.nama;
-                        itemDiv.draggable = true;
-                        itemDiv.dataset.type = itemData.tipe;
-                        itemsContainer.appendChild(itemDiv);
-                        itemDiv.addEventListener('dragstart', function (e) {
-                            draggedItem = e.target;
-                        });
-                    });
-                }
-            });
-
-        dropZones.forEach(zone => {
-            zone.addEventListener('dragover', e => e.preventDefault());
-            zone.addEventListener('drop', e => {
-                e.preventDefault();
-                if (draggedItem) {
-                    zone.appendChild(draggedItem);
-                    draggedItem = null;
-                }
-            });
-        });
-
-        checkButton.addEventListener('click', function () {
-            let totalBenar = 0;
-            let totalItem = document.querySelectorAll('.draggable-item').length;
-
-            dropZones.forEach(zone => {
-                const itemsInZone = zone.querySelectorAll('.draggable-item');
-                itemsInZone.forEach(item => {
-                    if (item.dataset.type === zone.id) {
-                        item.style.backgroundColor = '#d4edda';
-                        totalBenar++;
-                    } else {
-                        item.style.backgroundColor = '#f8d7da';
-                    }
-                });
-            });
-
-            if (totalBenar === totalItem) {
-                resultContainer.innerHTML = '<span class="text-success">Hebat! Semua jawabanmu benar!</span>';
-            } else {
-                resultContainer.innerHTML = `<span class="text-danger">Oops! Kamu benar ${totalBenar} dari ${totalItem} item. Coba perbaiki!</span>`;
-            }
-        });
-    });
-</script>
-{% elif subtopik_aktif.judul == "1.3: Membangun Jaring-jaring Makanan Lahan Basah" %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const apiURL = "{% url 'api_rantai_makanan' %}";
-        const instruksiEl = document.getElementById('instruksi-simulasi');
-        const pilihanEl = document.getElementById('pilihan-organisme');
-        const rantaiEl = document.getElementById('rantai-terbangun');
-
-        let semuaOrganisme = [];
-        let rantaiMakanan = [];
-        let langkahSaatIni = 0;
-
-        const instruksiTeks = [
-            "Ketuk organisme yang berperan sebagai Produsen.",
-            "Ketuk organisme yang memakan Produsen (Konsumen I).",
-            "Ketuk organisme yang memakan Konsumen I (Konsumen II).",
-            "Ketuk organisme yang memakan Konsumen II (Konsumen III)."
-        ];
-
-        // Hanya jalankan fetch jika elemen simulasi ada di halaman
-        if (instruksiEl && pilihanEl && rantaiEl) {
-            fetch(apiURL)
+        // Pastikan elemen ada sebelum menjalankan fetch
+        if (itemsContainer) {
+            fetch("{% url 'api_klasifikasi' %}")
                 .then(response => response.json())
                 .then(data => {
-                    semuaOrganisme = data.organisme;
-                    mulaiSimulasi();
-                });
-        }
-
-        function mulaiSimulasi() {
-            langkahSaatIni = 0;
-            rantaiMakanan = [];
-            updateTampilan();
-        }
-
-        function updateTampilan() {
-            // Periksa apakah elemen ada sebelum mengaturnya
-            if (instruksiEl) {
-                instruksiEl.innerText = instruksiTeks[langkahSaatIni];
-            }
-            if (pilihanEl) {
-                pilihanEl.innerHTML = '';
-                semuaOrganisme.forEach(org => {
-                    const orgButton = document.createElement('button');
-                    orgButton.className = 'btn btn-outline-success';
-                    orgButton.innerText = org.nama;
-                    orgButton.dataset.id = org.id;
-
-                    if (rantaiMakanan.find(r => r.id === org.id)) {
-                        orgButton.disabled = true;
+                    if (data.items) {
+                        data.items.forEach(itemData => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'p-2 m-1 border rounded bg-white draggable-item';
+                            itemDiv.innerText = itemData.nama;
+                            itemDiv.draggable = true;
+                            itemDiv.dataset.type = itemData.tipe;
+                            itemsContainer.appendChild(itemDiv);
+                            itemDiv.addEventListener('dragstart', function (e) {
+                                draggedItem = e.target;
+                            });
+                        });
                     }
+                });
 
-                    orgButton.addEventListener('click', function () {
-                        cekJawaban(org);
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => e.preventDefault());
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    if (draggedItem) {
+                        zone.appendChild(draggedItem);
+                        draggedItem = null;
+                    }
+                });
+            });
+
+            checkButton.addEventListener('click', function () {
+                let totalBenar = 0;
+                let totalItem = document.querySelectorAll('.draggable-item').length;
+
+                dropZones.forEach(zone => {
+                    const itemsInZone = zone.querySelectorAll('.draggable-item');
+                    itemsInZone.forEach(item => {
+                        if (item.dataset.type === zone.id) {
+                            item.style.backgroundColor = '#d4edda';
+                            totalBenar++;
+                        } else {
+                            item.style.backgroundColor = '#f8d7da';
+                        }
                     });
-                    pilihanEl.appendChild(orgButton);
                 });
-            }
-            if (rantaiEl) {
-                rantaiEl.innerText = 'Rantai Makanan: ' + rantaiMakanan.map(r => r.nama).join(' → ');
-            }
-        }
 
-        function cekJawaban(organisme) {
-            let jawabanBenar = false;
-            if (langkahSaatIni === 0 && organisme.tipe === 'produsen') {
-                jawabanBenar = true;
-            }
-            else if (langkahSaatIni > 0) {
-                const organismeSebelumnya = rantaiMakanan[langkahSaatIni - 1];
-                if (organisme.memakan.includes(organismeSebelumnya.id)) {
-                    jawabanBenar = true;
-                }
-            }
-
-            if (jawabanBenar) {
-                rantaiMakanan.push(organisme);
-                langkahSaatIni++;
-                if (langkahSaatIni >= instruksiTeks.length) {
-                    if (instruksiEl) instruksiEl.innerText = "Selamat! Rantai makanan berhasil dibangun!";
-                    if (pilihanEl) {
-                        pilihanEl.innerHTML = '<button id="reset-btn" class="btn btn-primary">Ulangi Simulasi</button>';
-                        document.getElementById('reset-btn').addEventListener('click', mulaiSimulasi);
-                    }
+                if (totalBenar === totalItem) {
+                    resultContainer.innerHTML = '<span class="text-success">Hebat! Semua jawabanmu benar!</span>';
                 } else {
-                    updateTampilan();
+                    resultContainer.innerHTML = `<span class="text-danger">Oops! Kamu benar ${totalBenar} dari ${totalItem} item. Coba perbaiki!</span>`;
                 }
-            } else {
-                alert('Pilihan kurang tepat, coba lagi!');
-            }
+            });
         }
     });
 </script>
@@ -321,23 +259,19 @@
 {% elif subtopik_aktif.judul == "1.2: Membedah Interaksi Makhluk Hidup di Rawa" %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Cek jika #infoBox ada, jika tidak, buatkan satu
         if (!document.getElementById('infoBox')) {
             const infoBoxDiv = document.createElement('div');
             infoBoxDiv.id = 'infoBox';
             infoBoxDiv.className = 'alert alert-info text-center mt-4';
             infoBoxDiv.style.display = 'none';
-            // Tambahkan di akhir card-body
             document.querySelector('.col-md-8 .card-body').appendChild(infoBoxDiv);
         }
 
-        // Script untuk tombol info box
         document.querySelectorAll('.interaktif-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const infoBox = document.getElementById('infoBox');
                 infoBox.style.display = 'block';
                 infoBox.textContent = btn.dataset.info;
-                // Anda mungkin perlu menambahkan Animate.css ke base.html Anda agar ini berfungsi
                 infoBox.classList.add('animate__animated', 'animate__fadeIn');
                 setTimeout(() => infoBox.classList.remove('animate__fadeIn'), 800);
             });

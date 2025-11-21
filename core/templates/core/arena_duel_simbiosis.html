@@ -3,259 +3,345 @@
 
 {% block content %}
 <style>
-    /* CSS Kustom untuk Halaman Arena */
-    
-    .arena-row {
-        display: flex;
-        flex-wrap: wrap;
-    }
+    /* Membatalkan Sticky Footer */
+    body { display: block !important; height: auto !important; min-height: 0 !important; }
+    main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
-    .arena-illustration {
-        background: url('https://images.unsplash.com/photo-1444930694458-01babf71870c?q=80&w=1974') no-repeat center center;
-        background-size: cover;
-        filter: brightness(0.9);
+    /* CSS Menu Level */
+    #level-select-screen {
+        background-color: #fff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05);
     }
-
-    .arena-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        background-color: #ffffff;
+    .level-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem;
     }
-    
-    @media (max-width: 767px) {
-        .arena-illustration {
-            min-height: 200px;
-            border-radius: 15px 15px 0 0;
-        }
-        .arena-container {
-            border-radius: 0 0 15px 15px;
-        }
-    }
-
-    .game-card {
-        width: 100%;
-    }
-    
-    .game-card .card-header {
-        background-color: #ffc107;
-        color: #000;
-        border: none;
-        padding: 1rem 1.5rem;
-    }
-
-    .answer-btn {
-        font-size: 1.1rem;
-        font-weight: 500;
-        text-align: left;
-        padding: 1rem;
-        border: 2px solid #e0e0e0;
+    .level-box {
+        background-color: #fff9c4; 
+        border: 2px solid #f0e68c; border-radius: 10px; padding: 1.5rem;
+        font-size: 1.5rem; font-weight: bold; text-align: center; cursor: pointer;
         transition: all 0.2s ease;
     }
-    .answer-btn:hover {
-        background-color: #f8f9fa;
-        border-color: #0d6efd;
+    .level-box:hover { background-color: #fff176; border-color: #fdd835; transform: translateY(-3px); }
+    .level-box i { display: block; font-size: 2rem; margin-bottom: 0.5rem; color: #fbc02d; }
+
+    /* CSS Game Screen */
+    #game-screen { visibility: hidden; opacity: 0; transition: opacity 0.3s ease-in-out; }
+    #game-screen.show { visibility: visible; opacity: 1; }
+    #level-select-screen.hide { display: none; }
+
+    .arena-illustration {
+        background-size: contain;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-color: #e9ecef;
+        height: 100%; 
+        min-height: 400px; 
+        border-radius: 15px 0 0 15px;
+        transition: background-image 0.5s ease-in-out;
     }
-    
-    .answer-btn.btn-success {
-        background-color: #198754 !important;
-        border-color: #198754 !important;
-        color: white !important;
+
+    .row.g-0 { align-items: stretch; }
+
+    .arena-container {
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem; background-color: #ffffff;
+        border-radius: 0 15px 15px 0;
     }
-    .answer-btn.btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-        color: white !important;
+    .game-card { width: 100%; }
+    .game-card .card-header { background-color: #ffc107; color: #000; border: none; padding: 1rem 1.5rem; }
+
+    /* Tombol Jawaban */
+    .answer-btn {
+        font-size: 1.1rem; font-weight: 500; text-align: left; padding: 1rem;
+        border: 2px solid #e0e0e0; transition: all 0.2s ease;
+    }
+    .answer-btn:hover { background-color: #f8f9fa; border-color: #0d6efd; }
+    .answer-btn.btn-success { background-color: #198754 !important; border-color: #198754 !important; color: white !important; }
+    .answer-btn.btn-danger { background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important; }
+
+    /* =================================
+    CSS BARU: Ikon Jawaban Custom
+    =================================
+    */
+    .answer-icon {
+        width: 128px;       /* Lebar ikon */
+        height: 128px;      /* Tinggi ikon */
+        object-fit: contain; /* Agar gambar tidak gepeng */
+        margin-left: 10px; /* Jarak dari teks */
+    }
+    /* AKHIR CSS BARU */
+
+    @media (max-width: 767px) {
+        .arena-illustration { 
+            min-height: 250px; 
+            border-radius: 15px 15px 0 0; 
+        }
+        .arena-container { 
+            border-radius: 0 0 15px 15px; 
+        }
     }
 </style>
 
-<div class="row justify-content-center">
-    <div class="col-xl-10">
-        <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
-            <div class="row g-0 arena-row">
-                
-                {# PERUBAHAN DI SINI: Gambar sekarang menggunakan col-md-5 #}
-                <div class="col-md-5 d-none d-md-block arena-illustration">
-                    </div>
+<div class="container text-dark my-5">
 
-                {# PERUBAHAN DI SINI: Area game sekarang menggunakan col-md-7 #}
+    <div id="level-select-screen" class="p-4 p-md-5">
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold">Arena: Duel Simbiosis</h1>
+            <p class="fs-4 text-muted">Pilih level untuk memulai duel pengetahuan.</p>
+        </div>
+        
+        <div class="level-grid" id="level-grid-container">
+            </div>
+        
+        <div class="text-center mt-5 d-flex justify-content-center gap-2">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house-door-fill me-1"></i> Dashboard
+            </a>
+            {% if materi_asal_pk %}
+            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-book-half me-1"></i> Materi Interaksi
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="game-screen" class="">
+        <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+            <div class="row g-0 h-100 align-items-stretch">
+                
+                <div class="col-md-5 d-none d-md-block">
+                     <div class="arena-illustration" id="game-illustration"></div>
+                </div>
+
                 <div class="col-md-7 col-12 arena-container">
                     <div class="game-card">
                         
                         <div class="card-header text-center">
-                            <h2 class="fw-bold mb-0">Duel Simbiosis</h2>
+                            <h2 class="fw-bold mb-0" id="game-title">Duel Simbiosis</h2>
                         </div>
                         
                         <div class="card-body p-4 p-md-5">
                             
-                            <div id="game-container">
-                                <h3 id="skenario" class="mb-4 text-center" style="min-height: 80px;">Skenario akan muncul di sini...</h3>
+                            <div id="game-content">
+                                <h3 id="skenario" class="mb-4 text-center" style="min-height: 80px;">Memuat...</h3>
                                 <div id="pilihan-container" class="d-grid gap-3">
                                     </div>
-                                <div class="text-center mt-4">
-                                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-                                    </a>
-                                </div>
                             </div>
                             
                             <div id="hasil-container" class="d-none text-center">
-                                <i class="bi bi-award-fill text-warning display-1 mb-3"></i>
-                                <h3 class="fw-bold">Game Selesai!</h3>
-                                <p class="fs-4">Skor Sesi Ini:</p>
+                                <i class="bi bi-trophy-fill text-warning display-1 mb-3"></i>
+                                <h3 class="fw-bold">Level Selesai!</h3>
+                                <p class="fs-4">Skor Level Ini:</p>
                                 <p id="skor-akhir" class="display-3 fw-bold text-success"></p>
-                                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Kembali ke Dashboard</a>
+                                <div class="d-grid gap-2 d-md-block mt-4">
+                                    <button id="back-to-menu-btn" class="btn btn-secondary">Menu Level</button>
+                                    <button id="next-level-btn" class="btn btn-warning fw-bold">Level Selanjutnya</button>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
+                                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-dark">
+                                        <i class="bi bi-house-door-fill"></i> Dashboard
+                                    </a>
+                                    {% if materi_asal_pk %}
+                                    <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-book-half"></i> Materi
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </div>
 
                         </div>
                         
                         <div class="card-footer text-muted" style="background-color: #f8f9fa; padding: 1.25rem;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span id="progress-text" class="small">
-                                    Pertanyaan <span id="nomor-pertanyaan">0</span> dari <span id="total-pertanyaan">0</span>
-                                </span>
-                                <span class="small">
-                                    Total Poin: <strong id="skor-saat-ini" class="text-warning">{{ profil_siswa.total_poin|default:0 }}</strong>
-                                </span>
+                                <span id="progress-text" class="small">Persiapan...</span>
+                                <span class="small">Total Poin: <strong id="poin-display" class="text-warning">{{ profil_siswa.total_poin|default:0 }}</strong></span>
                             </div>
                             <div class="progress" style="height: 10px;">
-                                <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                <div id="progress-bar" class="progress-bar bg-warning" role="progressbar" style="width: 0%;"></div>
                             </div>
                         </div>
-                        
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const pertanyaanData = {{ pertanyaan_json|safe }};
-    let pertanyaanSekarang = 0;
-    let skorSesiIni = 0;
-    let skorTotalServer = {{ profil_siswa.total_poin|default:0 }}; 
+    const gameData = {{ game_data_json|safe }};
+    let currentLevelIndex = 0;
+    let currentQuestionIndex = 0;
+    let levelScore = 0;
+    let totalPoinServer = {{ profil_siswa.total_poin|default:0 }};
 
-    // Deklarasi semua elemen HTML
+    // Elemen UI
+    const levelSelectScreen = document.getElementById('level-select-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const levelGridContainer = document.getElementById('level-grid-container');
+    const gameTitle = document.getElementById('game-title');
+    const gameContent = document.getElementById('game-content');
+    const hasilContainer = document.getElementById('hasil-container');
+    const illustrationEl = document.getElementById('game-illustration');
     const skenarioEl = document.getElementById('skenario');
     const pilihanContainerEl = document.getElementById('pilihan-container');
-    const nomorPertanyaanEl = document.getElementById('nomor-pertanyaan');
-    const totalPertanyaanEl = document.getElementById('total-pertanyaan');
-    const skorSaatIniEl = document.getElementById('skor-saat-ini');
-    const gameContainer = document.getElementById('game-container');
-    const hasilContainer = document.getElementById('hasil-container');
-    const skorAkhirEl = document.getElementById('skor-akhir');
     const progressText = document.getElementById('progress-text');
     const progressBar = document.getElementById('progress-bar');
+    const poinDisplay = document.getElementById('poin-display');
+    const skorAkhirEl = document.getElementById('skor-akhir');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const nextLevelBtn = document.getElementById('next-level-btn');
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    // --- 1. Inisialisasi Menu Level ---
+    function buildLevelGrid() {
+        levelGridContainer.innerHTML = '';
+        gameData.forEach((level, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'level-box';
+            btn.innerHTML = `<i class="bi bi-lightning-fill"></i> Level ${level.level}`;
+            btn.onclick = () => startLevel(index);
+            levelGridContainer.appendChild(btn);
+        });
     }
-    const csrftoken = getCookie('csrftoken');
 
-    function cekJawaban(pilihanPengguna, pertanyaanObjek, tombolYangDiklik) {
-        const isBenar = (pilihanPengguna === pertanyaanObjek.jawaban_benar);
+    // --- 2. Mulai Level ---
+    function startLevel(index) {
+        currentLevelIndex = index;
+        currentQuestionIndex = 0;
+        levelScore = 0;
+
+        levelSelectScreen.classList.add('hide');
+        gameScreen.classList.add('show');
+        gameContent.classList.remove('d-none');
+        hasilContainer.classList.add('d-none');
+
+        const levelData = gameData[currentLevelIndex];
+        gameTitle.innerText = `Duel Simbiosis - Level ${levelData.level}`;
         
-        const semuaTombol = pilihanContainerEl.querySelectorAll('button');
-        semuaTombol.forEach(btn => btn.disabled = true);
+        loadQuestion();
+    }
 
-        if (isBenar) {
-            skorSesiIni += 20; 
-            tombolYangDiklik.classList.add('btn-success');
+    // --- 3. Load Pertanyaan ---
+    function loadQuestion() {
+        const levelData = gameData[currentLevelIndex];
+        
+        if (currentQuestionIndex >= levelData.questions.length) {
+            finishLevel();
+            return;
+        }
+
+        const qData = levelData.questions[currentQuestionIndex];
+        
+        const totalQ = levelData.questions.length;
+        progressText.innerText = `Pertanyaan ${currentQuestionIndex + 1} dari ${totalQ}`;
+        progressBar.style.width = `${((currentQuestionIndex) / totalQ) * 100}%`;
+
+        skenarioEl.innerText = qData.soal;
+        pilihanContainerEl.innerHTML = '';
+
+        if (illustrationEl) {
+            illustrationEl.style.backgroundImage = `url('${qData.image_url}')`;
+        }
+
+        // ---------------------------------------------
+        // PERBAIKAN: Ganti Ikon Bootstrap dengan Gambar
+        // ---------------------------------------------
+        const answerImages = {
+            'Mutualisme': "{% static 'images/icons/icon_mutualisme.jpg' %}",
+            'Komensalisme': "{% static 'images/icons/icon_komensalisme.png' %}",
+            'Parasitisme': "{% static 'images/icons/icon_parasitisme.png' %}"
+        };
+
+        qData.pilihan.forEach(pilihan => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-light answer-btn d-flex justify-content-between align-items-center';
+            
+            // Gunakan gambar default jika tidak ditemukan di mapping
+            const imgSrc = answerImages[pilihan] || "{% static 'images/icons/default.png' %}";
+
+            btn.innerHTML = `
+                <span>${pilihan}</span> 
+                <img src="${imgSrc}" alt="${pilihan}" class="answer-icon" onerror="this.style.display='none'">
+            `;
+            
+            btn.onclick = () => checkAnswer(pilihan, qData, btn);
+            pilihanContainerEl.appendChild(btn);
+        });
+        // ---------------------------------------------
+    }
+
+    // --- 4. Cek Jawaban ---
+    function checkAnswer(jawabanUser, qData, btnKlik) {
+        const allBtn = pilihanContainerEl.querySelectorAll('button');
+        allBtn.forEach(b => b.disabled = true);
+
+        const isCorrect = (jawabanUser === qData.jawaban_benar);
+
+        if (isCorrect) {
+            btnKlik.classList.add('btn-success');
+            levelScore += 20; 
+            kirimPoinKeServer(20);
         } else {
-            tombolYangDiklik.classList.add('btn-danger');
-            semuaTombol.forEach(btn => {
-                if (btn.dataset.answer === pertanyaanObjek.jawaban_benar) {
-                    btn.classList.add('btn-success');
+            btnKlik.classList.add('btn-danger');
+            allBtn.forEach(b => {
+                if (b.textContent.trim() === qData.jawaban_benar) {
+                    b.classList.add('btn-success');
                 }
             });
         }
 
-        fetch("{% url 'api_simpan_jawaban' %}", {
+        currentQuestionIndex++;
+        setTimeout(loadQuestion, 1500);
+    }
+
+    // --- 5. Level Selesai ---
+    function finishLevel() {
+        gameContent.classList.add('d-none');
+        hasilContainer.classList.remove('d-none');
+        
+        skorAkhirEl.innerText = levelScore;
+        progressText.innerText = "Level Selesai!";
+        progressBar.style.width = "100%";
+
+        if (currentLevelIndex < gameData.length - 1) {
+            nextLevelBtn.classList.remove('d-none');
+        } else {
+            nextLevelBtn.classList.add('d-none'); 
+        }
+    }
+
+    // --- 6. Navigasi ---
+    backToMenuBtn.onclick = () => {
+        gameScreen.classList.remove('show');
+        levelSelectScreen.classList.remove('hide');
+    };
+
+    nextLevelBtn.onclick = () => {
+        startLevel(currentLevelIndex + 1);
+    };
+
+    // --- 7. Kirim Poin (API) ---
+    function kirimPoinKeServer(poin) {
+        fetch("{% url 'api_simpan_poin' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
+                'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: JSON.stringify({
-                'pertanyaan_id': pertanyaanObjek.id,
-                'jawaban_benar': isBenar
-            })
+            body: JSON.stringify({ 'poin_didapat': poin })
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             if (data.status === 'sukses') {
-                skorTotalServer = data.total_poin_baru;
-                skorSaatIniEl.innerText = skorTotalServer;
+                totalPoinServer = data.total_poin_baru;
+                poinDisplay.innerText = totalPoinServer;
             }
         });
-
-        pertanyaanSekarang++;
-        setTimeout(tampilkanPertanyaan, 1500); 
     }
 
-    function tampilkanPertanyaan() {
-        if (pertanyaanSekarang >= pertanyaanData.length) {
-            gameContainer.classList.add('d-none');
-            hasilContainer.classList.remove('d-none');
-            skorAkhirEl.innerText = skorSesiIni;
-            
-            progressText.innerText = "Selesai!";
-            progressBar.style.width = '100%';
-            nomorPertanyaanEl.innerText = totalPertanyaanEl.innerText;
-            return;
-        }
-
-        const data = pertanyaanData[pertanyaanSekarang];
-        skenarioEl.innerText = data.soal;
-        
-        skenarioEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        pilihanContainerEl.innerHTML = '';
-
-        const icons = {
-            'Mutualisme': 'bi bi-heart-fill text-danger',
-            'Komensalisme': 'bi bi-house-fill text-primary',
-            'Parasitisme': 'bi bi-bug-fill text-warning'
-        };
-
-        data.pilihan.forEach(pilihan => {
-            const button = document.createElement('button');
-            button.className = 'btn btn-light answer-btn d-flex justify-content-between align-items-center';
-            button.dataset.answer = pilihan;
-            
-            button.innerHTML = `
-                <span>${pilihan}</span>
-                <i class="${icons[pilihan] || 'bi-question-circle-fill'} fs-4"></i>
-            `;
-            
-            button.onclick = () => cekJawaban(pilihan, data, button);
-            pilihanContainerEl.appendChild(button);
-        });
-
-        nomorPertanyaanEl.innerText = pertanyaanSekarang + 1;
-        progressText.innerText = `Pertanyaan ${pertanyaanSekarang + 1} dari ${pertanyaanData.length}`;
-        const percent = (pertanyaanSekarang / pertanyaanData.length) * 100;
-        progressBar.style.width = `${percent}%`;
-    }
-
-    totalPertanyaanEl.innerText = pertanyaanData.length;
-    skorSaatIniEl.innerText = skorTotalServer;
-    tampilkanPertanyaan();
+    buildLevelGrid();
 });
 </script>
 {% endblock %}

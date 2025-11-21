@@ -55,4 +55,19 @@ urlpatterns = [
 
     # --- TAMBAHKAN BARIS INI ---
     path('materi/batalkan-selesai/<int:pk>/', views.batalkan_materi_selesai_view, name='batalkan_materi_selesai'),
+
+    # --- TAMBAHKAN URL INI UNTUK ARENA BARU ---
+    path('arena/klasifikasi/', views.klasifikasi_view, name='klasifikasi_arena'),
+
+    # --- TAMBAHKAN BARIS INI ---
+    path('leaderboard/', views.leaderboard_view, name='leaderboard'),
+
+    # --- TAMBAHKAN URL INI ---
+    path('ujian-akhir/', views.ujian_akhir_view, name='ujian_akhir'),
+
+    # 1. URL untuk arena baru (Energy Flow)
+    path('arena/energy-flow/', views.energy_flow_view, name='energy_flow_arena'),
+    
+    # 2. URL API baru untuk menyimpan poin dari game (Klasifikasi & Energy Flow)
+    path('api/arena/simpan-poin/', views.api_simpan_poin_view, name='api_simpan_poin'),
 ]

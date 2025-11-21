@@ -5,7 +5,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-10 col-xl-8">
 
-            {% with kkm=75 %} <div class="card shadow-lg border-0 text-center mb-4">
+            {% with kkm=75 %} 
+            <div class="card shadow-lg border-0 text-center mb-4">
                 <div class="card-header {% if skor >= kkm %}bg-success{% else %}bg-danger{% endif %} text-white">
                     <h2 class="mb-0">{% if skor >= kkm %}Selamat, Anda Lulus!{% else %}Kuis Selesai{% endif %}</h2>
                 </div>
@@ -19,9 +20,11 @@
                     <p class="fs-5 mb-4">Jangan menyerah! Coba review jawaban Anda di bawah ini untuk belajar lagi.</p>
                     {% endif %}
                     
+                    {% if kuis.subtopik %}
                     <a href="{% url 'subtopik_detail' pk=kuis.subtopik.pk %}" class="btn btn-outline-secondary me-2">
                         <i class="bi bi-arrow-left"></i> Kembali ke Materi
                     </a>
+                    {% endif %}
                     <a href="{% url 'dashboard' %}" class="btn btn-primary">
                         <i class="bi bi-house-door-fill"></i> Kembali ke Dashboard
                     </a>
@@ -100,35 +103,30 @@
                     </div>
                 </div>
             </div>
-            </div>
+
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Logika untuk membuka jawaban salah pertama secara otomatis
     const accordion = document.getElementById('reviewAccordion');
     if (accordion) {
-        // Cari tombol pertama yang 'collapsed' (yang berarti jawabannya SALAH)
         const firstWrongAnswerButton = accordion.querySelector('.accordion-button.collapsed');
         
         if (firstWrongAnswerButton) {
-            // Jika ada jawaban salah, kita ingin BUKA accordionnya
-            const targetId = firstWrongAnswerButton.getAttribute('data-bs-target');
-            const targetCollapse = document.querySelector(targetId);
-            
-            // Hapus 'collapsed' dari tombol dan 'show' dari item lain
             document.querySelectorAll('.accordion-button').forEach(btn => btn.classList.add('collapsed'));
             document.querySelectorAll('.accordion-collapse').forEach(col => col.classList.remove('show'));
             
-            // Buka item yang salah
+            const targetId = firstWrongAnswerButton.getAttribute('data-bs-target');
+            const targetCollapse = document.querySelector(targetId);
+            
             firstWrongAnswerButton.classList.remove('collapsed');
             firstWrongAnswerButton.setAttribute('aria-expanded', 'true');
             if (targetCollapse) {
                 targetCollapse.classList.add('show');
             }
         } else {
-            // Jika semua benar, buka pertanyaan PERTAMA saja
             const firstButton = accordion.querySelector('.accordion-button');
             const firstCollapse = accordion.querySelector('.accordion-collapse');
             if(firstButton) {

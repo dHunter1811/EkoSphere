@@ -1,0 +1,394 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Membatalkan Sticky Footer */
+    body { display: block !important; height: auto !important; min-height: 0 !important; }
+    main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+
+    /* CSS Menu Level - NUANSA HIJAU */
+    #level-select-screen {
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    .level-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 1rem;
+    }
+    .level-box {
+        /* Hijau Muda */
+        background-color: #d1e7dd; 
+        border: 2px solid #badbcc;
+        color: #0f5132;
+        
+        border-radius: 10px;
+        padding: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .level-box:hover {
+        background-color: #a3cfbb;
+        border-color: #198754;
+        transform: translateY(-3px);
+    }
+    .level-box i {
+        display: block;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #198754; /* Ikon Hijau Tua */
+    }
+
+    /* CSS Game Screen */
+    #game-screen {
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    #game-screen.show {
+        visibility: visible;
+        opacity: 1;
+    }
+    #level-select-screen.hide {
+        display: none;
+    }
+
+    /* CSS Drag & Drop */
+    .draggable-item {
+        cursor: grab;
+        background-color: #fff;
+        transition: all 0.2s ease;
+    }
+    .draggable-item:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-color: #198754 !important; /* Border hijau saat hover */
+    }
+    .drop-zone {
+        min-height: 200px;
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    .drop-zone.drag-over {
+        background-color: #e0e0e0;
+    }
+
+    .arena-illustration {
+        background-size: contain;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-color: #e9ecef;
+        
+        height: 100%; 
+        min-height: 400px; 
+        
+        border-radius: 15px 0 0 15px;
+        transition: background-image 0.5s ease-in-out;
+    }
+    
+    .row.g-0 { align-items: stretch; }
+
+    .arena-container {
+        display: flex; flex-direction: column; justify-content: center;
+        padding: 2rem; background-color: #ffffff;
+        border-radius: 0 15px 15px 0;
+    }
+    
+    /* Header Game Hijau */
+    .game-card-header {
+        background-color: #198754; /* Hijau Success */
+        color: white;
+        padding: 1rem 1.5rem;
+    }
+
+    @media (max-width: 767px) {
+        .arena-illustration {
+            min-height: 250px;
+            border-radius: 15px 15px 0 0;
+        }
+        .arena-container {
+            border-radius: 0 0 15px 15px;
+        }
+    }
+</style>
+
+<div class="container text-dark my-5">
+
+    <div id="level-select-screen" class="p-4 p-md-5">
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold text-success">Arena: Klasifikasi Komponen</h1>
+            <p class="fs-4 text-muted">Pilih level untuk memulai tantangan.</p>
+        </div>
+        
+        <div class="level-grid" id="level-grid-container">
+            </div>
+        
+        <div class="text-center mt-5 d-flex justify-content-center gap-2">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house-door-fill me-1"></i> Dashboard
+            </a>
+            {% if materi_asal_pk %}
+            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-success">
+                <i class="bi bi-book-half me-1"></i> Materi Klasifikasi
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="game-screen" class="">
+        <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+            <div class="row g-0 h-100 align-items-stretch">
+                
+                <div class="col-md-5 d-none d-md-block">
+                     <div class="arena-illustration" id="game-illustration"></div>
+                </div>
+                
+                <div class="col-md-7 col-12 arena-container p-0"> <div class="game-card-header w-100 d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0 fw-bold" id="game-title">Uji Pemahaman</h3>
+                        <button class="btn btn-light btn-sm text-success fw-bold" id="back-to-menu-header-btn">
+                            <i class="bi bi-list-ul"></i> Menu Level
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 p-md-5 w-100">
+                        <p class="text-center mb-4">Seret setiap item di bawah ini ke dalam kotak yang benar.</p>
+                        
+                        <div id="items-container" class="d-flex flex-wrap justify-content-center p-3 border rounded mb-4 bg-light" style="min-height: 80px;">
+                            </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div id="biotik" class="p-4 border rounded text-center drop-zone h-100 d-flex flex-column justify-content-center">
+                                    <h5 class="text-success fw-bold"><i class="bi bi-tree-fill"></i> Biotik</h5>
+                                    <small class="text-muted">(Makhluk Hidup)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div id="abiotik" class="p-4 border rounded text-center drop-zone h-100 d-flex flex-column justify-content-center">
+                                    <h5 class="text-secondary fw-bold"><i class="bi bi-cloud-sun-fill"></i> Abiotik</h5>
+                                    <small class="text-muted">(Benda Tak Hidup)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button id="check-button" class="btn btn-success btn-lg w-100">Cek Jawaban</button>
+                            
+                            <div id="result-container" class="mt-3 fw-bold fs-5"></div>
+                            
+                            <div id="game-nav-buttons" class="mt-3 d-none d-grid gap-2">
+                                <button id="next-level-btn" class="btn btn-warning fw-bold">Lanjut ke Level Berikutnya</button>
+                                <button id="back-to-menu-btn" class="btn btn-outline-secondary">Kembali ke Menu Level</button>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
+                                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-dark">
+                                    <i class="bi bi-house-door-fill"></i> Dashboard
+                                </a>
+                                {% if materi_asal_pk %}
+                                <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-book-half"></i> Materi
+                                </a>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const gameData = {{ game_data_json|safe }};
+    let currentLevelIndex = 0;
+    let draggedItem = null;
+
+    const levelSelectScreen = document.getElementById('level-select-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const levelGridContainer = document.getElementById('level-grid-container');
+    const gameTitle = document.getElementById('game-title');
+    const itemsContainer = document.getElementById('items-container');
+    const dropZones = document.querySelectorAll('.drop-zone');
+    const checkButton = document.getElementById('check-button');
+    const resultContainer = document.getElementById('result-container');
+    const gameNavButtons = document.getElementById('game-nav-buttons');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const illustrationEl = document.getElementById('game-illustration');
+    const backToMenuHeaderBtn = document.getElementById('back-to-menu-header-btn');
+
+    function showLevelSelectScreen() {
+        gameScreen.classList.remove('show');
+        levelSelectScreen.classList.remove('hide');
+        buildLevelGrid(); 
+    }
+
+    function loadLevel(levelIndex) {
+        currentLevelIndex = levelIndex;
+        const data = gameData[levelIndex];
+
+        levelSelectScreen.classList.add('hide');
+        gameScreen.classList.add('show'); 
+        
+        gameTitle.innerText = `Level ${data.level}`;
+        
+        // --- UPDATE GAMBAR ILUSTRASI ---
+        if (illustrationEl) {
+            illustrationEl.style.backgroundImage = `url('${data.image_url}')`;
+        }
+        
+        itemsContainer.innerHTML = '';
+        
+        // Bersihkan drop zones (reset ke H5 dan Small text)
+        dropZones.forEach(zone => {
+            // Kita asumsikan 2 elemen pertama adalah judul (H5) dan subjudul (SMALL)
+            // Hapus elemen setelah indeks 1
+            while (zone.children.length > 2) { 
+                zone.removeChild(zone.lastChild);
+            }
+            zone.style.backgroundColor = '#f8f9fa'; 
+        });
+        
+        resultContainer.className = 'mt-3 fw-bold fs-5';
+        resultContainer.innerHTML = '';
+        checkButton.disabled = false;
+        checkButton.classList.remove('d-none'); // Pastikan tombol cek muncul
+        gameNavButtons.classList.add('d-none');
+
+        data.items.forEach(itemData => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'p-2 m-1 border rounded draggable-item shadow-sm fw-bold';
+            itemDiv.innerText = itemData.nama;
+            itemDiv.draggable = true;
+            itemDiv.dataset.type = itemData.tipe;
+            itemsContainer.appendChild(itemDiv);
+            
+            itemDiv.addEventListener('dragstart', function (e) {
+                draggedItem = e.target;
+                e.target.style.opacity = '0.5';
+            });
+            itemDiv.addEventListener('dragend', function (e) {
+                if (draggedItem) { 
+                    draggedItem.style.opacity = '1';
+                }
+                draggedItem = null;
+            });
+        });
+    }
+    
+    function buildLevelGrid() {
+        levelGridContainer.innerHTML = '';
+        gameData.forEach((level, index) => {
+            const levelBox = document.createElement('button');
+            levelBox.className = 'level-box';
+            levelBox.innerHTML = `<i class="bi bi-grid-fill"></i> Level ${level.level}`;
+            levelBox.onclick = () => loadLevel(index);
+            levelGridContainer.appendChild(levelBox);
+        });
+    }
+
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', e => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (draggedItem) {
+                zone.appendChild(draggedItem);
+                draggedItem.style.opacity = '1';
+                draggedItem = null;
+            }
+        });
+    });
+
+    checkButton.addEventListener('click', function () {
+        let totalBenar = 0;
+        let totalItemDiDropZone = 0;
+        let totalItemAsli = gameData[currentLevelIndex].items.length;
+
+        const itemsDiContainer = itemsContainer.querySelectorAll('.draggable-item');
+        if (itemsDiContainer.length > 0) {
+            resultContainer.className = 'alert alert-warning mt-3';
+            resultContainer.innerText = 'Oops! Pindahkan semua item ke kotak yang benar terlebih dahulu.';
+            return;
+        }
+
+        dropZones.forEach(zone => {
+            const itemsInZone = zone.querySelectorAll('.draggable-item');
+            itemsInZone.forEach(item => {
+                totalItemDiDropZone++;
+                if (item.dataset.type === zone.id) {
+                    item.style.backgroundColor = '#d1e7dd'; // Hijau sukses
+                    totalBenar++;
+                } else {
+                    item.style.backgroundColor = '#f8d7da'; // Merah error
+                }
+                item.draggable = false;
+                item.style.cursor = 'default';
+            });
+        });
+
+        checkButton.classList.add('d-none'); // Sembunyikan tombol cek
+        gameNavButtons.classList.remove('d-none'); // Tampilkan tombol navigasi
+        
+        let isCorrect = (totalBenar === totalItemAsli);
+
+        if (isCorrect) {
+            resultContainer.className = 'alert alert-success mt-3';
+            resultContainer.innerHTML = `Hebat! Semua jawabanmu benar! <strong>+${totalBenar * 5} Poin</strong>`;
+            nextLevelBtn.classList.remove('d-none');
+        } else {
+            resultContainer.className = 'alert alert-danger mt-3';
+            resultContainer.innerHTML = `Oops! Kamu benar ${totalBenar} dari ${totalItemAsli} item. Coba lagi nanti.`;
+            nextLevelBtn.classList.add('d-none');
+        }
+        
+        if (isCorrect) {
+            kirimHasilKeServer(true, totalBenar * 5); 
+        }
+    });
+    
+    backToMenuBtn.onclick = showLevelSelectScreen;
+    backToMenuHeaderBtn.onclick = showLevelSelectScreen;
+    
+    nextLevelBtn.onclick = () => {
+        if (currentLevelIndex < gameData.length - 1) {
+            loadLevel(currentLevelIndex + 1);
+        } else {
+            resultContainer.className = 'alert alert-success mt-3';
+            resultContainer.innerText = 'Luar biasa! Kamu telah menyelesaikan semua level!';
+            nextLevelBtn.classList.add('d-none');
+        }
+    };
+    
+    function kirimHasilKeServer(isBenar, poinDidapat) {
+        fetch("{% url 'api_simpan_poin' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ 'poin_didapat': poinDidapat })
+        })
+        .then(res => res.json())
+        .then(data => console.log(data));
+    }
+
+    showLevelSelectScreen();
+});
+</script>
+{% endblock %}

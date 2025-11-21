@@ -3,119 +3,159 @@
 
 {% block content %}
 <style>
-    /* CSS Kustom untuk Halaman Arena */
-    .arena-row {
-        display: flex;
-        flex-wrap: wrap;
-        /* Hapus min-height agar tidak bentrok dengan footer */
+    /* Membatalkan Sticky Footer */
+    body { display: block !important; height: auto !important; min-height: 0 !important; }
+    main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+
+    /* CSS Menu Level - NUANSA MERAH */
+    #level-select-screen {
+        background-color: #fff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    .level-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;
+    }
+    .level-box {
+        /* Merah Muda */
+        background-color: #f8d7da; 
+        border: 2px solid #f5c6cb;
+        color: #842029; /* Teks Merah Gelap */
+        
+        border-radius: 10px; padding: 1.5rem;
+        font-size: 1.2rem; font-weight: bold; text-align: center; cursor: pointer;
+        transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center;
+    }
+    .level-box:hover { 
+        background-color: #f1aeb5; 
+        border-color: #dc3545; 
+        transform: translateY(-3px); 
+    }
+    .level-box i { 
+        font-size: 2rem; 
+        margin-bottom: 0.5rem; 
+        color: #dc3545; /* Ikon Merah */
     }
 
-    /* Kolom ilustrasi di kiri */
+    /* CSS Game Screen */
+    #game-screen { visibility: hidden; opacity: 0; transition: opacity 0.3s ease-in-out; }
+    #game-screen.show { visibility: visible; opacity: 1; }
+    #level-select-screen.hide { display: none; }
+
     .arena-illustration {
-        background: url('https://images.unsplash.com/photo-1444930694458-01babf71870c?q=80&w=1974') no-repeat center center;
-        background-size: cover;
-        min-height: 400px; /* Tinggi minimum untuk mobile */
-        filter: brightness(0.8) sepia(0.2);
+        background-size: cover; background-position: center center;
+        min-height: 400px; border-radius: 15px 0 0 15px;
+        transition: background-image 0.5s ease-in-out;
     }
-
-    /* Kontainer game di kanan */
     .arena-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        background-color: #ffffff;
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem; background-color: #ffffff;
     }
+    .game-card { width: 100%; }
     
-    /* Penyesuaian untuk layar kecil (mobile) */
-    @media (max-width: 767px) {
-        .arena-illustration {
-            min-height: 200px;
-            border-radius: 15px 15px 0 0;
-        }
-        .arena-container {
-            border-radius: 0 0 15px 15px;
-        }
+    /* Header Merah */
+    .game-card .card-header { 
+        background-color: #dc3545; /* Merah Danger */
+        color: #fff; 
+        border: none; padding: 1rem 1.5rem; 
     }
 
-    .game-card {
-        width: 100%;
-    }
-    
-    .game-card .card-header {
-        background-color: #0dcaf0; /* Biru Info */
-        color: #000;
-        border: none;
-        padding: 1rem 1.5rem;
-    }
-
-    /* Tombol jawaban kustom */
+    /* Tombol Jawaban */
     .answer-btn {
-        font-size: 1.1rem;
-        padding: 0.8rem 1rem;
-        border: 2px solid #e0e0e0;
-        transition: all 0.2s ease;
+        font-size: 1.1rem; padding: 0.8rem 1rem;
+        border: 2px solid #e0e0e0; transition: all 0.2s ease; text-align: left;
     }
-    .answer-btn:hover {
-        background-color: #f8f9fa;
-        border-color: #0dcaf0;
+    .answer-btn:hover { 
+        background-color: #f8f9fa; 
+        border-color: #dc3545; /* Border merah saat hover */
     }
-    
-    /* Status feedback saat diklik */
-    .answer-btn.btn-success {
-        background-color: #198754 !important;
-        border-color: #198754 !important;
-        color: white !important;
-    }
-    .answer-btn.btn-danger {
-        background-color: #dc3545 !important;
-        border-color: #dc3545 !important;
-        color: white !important;
+    .answer-btn.btn-success { background-color: #198754 !important; border-color: #198754 !important; color: white !important; }
+    .answer-btn.btn-danger { background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important; }
+
+    @media (max-width: 767px) {
+        .arena-illustration { min-height: 200px; border-radius: 15px 15px 0 0; }
+        .arena-container { border-radius: 0 0 15px 15px; }
     }
 </style>
 
-<div class="row justify-content-center">
-    <div class="col-xl-10">
+<div class="container text-dark my-5">
+
+    <div id="level-select-screen" class="p-4 p-md-5">
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold text-danger">Arena: Jejak Predator</h1>
+            <p class="fs-4 text-muted">Ikuti jejak dan pecahkan misteri rantai makanan.</p>
+        </div>
+        
+        <div class="level-grid" id="level-grid-container">
+            </div>
+        
+        <div class="text-center mt-5 d-flex justify-content-center gap-2">
+            {% if sumber_akses == 'dashboard' %}
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-house-door-fill me-1"></i> Dashboard
+                </a>
+            {% elif materi_asal_pk %}
+                <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-danger">
+                    <i class="bi bi-book-half me-1"></i> Kembali ke Materi
+                </a>
+            {% else %}
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="game-screen" class="">
         <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
-            <div class="row g-0 arena-row">
-                <div class="col-md-5 d-none d-md-block arena-illustration">
-                    </div>
+            <div class="row g-0">
+                
+                <div class="col-md-5 d-none d-md-block arena-illustration" id="game-illustration"></div>
 
                 <div class="col-md-7 col-12 arena-container">
                     <div class="game-card">
                         
                         <div class="card-header text-center">
-                            <h2 id="story-title" class="fw-bold mb-0">Jejak Predator</h2>
+                            <h2 id="story-title" class="fw-bold mb-0">...</h2>
                         </div>
                         
                         <div class="card-body p-4 p-md-5">
                             
-                            <blockquote class="blockquote text-center border-start border-4 border-info ps-3 mb-4" style="min-height: 120px;">
-                                <p id="story-text" class="fs-5 fst-italic">Memuat cerita...</p>
-                            </blockquote>
+                            <div id="game-content">
+                                <blockquote class="blockquote text-center border-start border-4 border-danger ps-3 mb-4" style="min-height: 100px;">
+                                    <p id="story-text" class="fs-5 fst-italic">Memuat...</p>
+                                </blockquote>
 
-                            <div id="question-area" class="d-none">
-                                <hr>
-                                <p id="question-text" class="fw-bold text-center my-3">Pertanyaan akan muncul di sini...</p>
-                                <div id="answer-options" class="d-grid gap-2">
+                                <div id="interaction-area">
+                                    <div id="continue-btn-area" class="d-grid">
+                                        <button id="continue-btn" class="btn btn-danger text-white fw-bold">Lanjutkan <i class="bi bi-arrow-right"></i></button>
                                     </div>
-                            </div>
-
-                            <div id="continue-button-area" class="d-grid d-none">
-                                <button id="continue-btn" class="btn btn-info">Lanjutkan <i class="bi bi-arrow-right"></i></button>
+                                    
+                                    <div id="question-area" class="d-none">
+                                        <hr>
+                                        <p id="question-text" class="fw-bold text-center my-3">...</p>
+                                        <div id="answer-options" class="d-grid gap-2"></div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div id="hasil-container" class="d-none text-center">
                                 <i class="bi bi-compass text-success display-1 mb-3"></i>
-                                <h3 class="fw-bold">Ekspedisi Selesai!</h3>
-                                <p class="fs-4">Anda berhasil memecahkan misteri!</p>
-                                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Kembali ke Dashboard</a>
+                                <h3 class="fw-bold">Misteri Terpecahkan!</h3>
+                                <p class="fs-4">Skor Kasus Ini:</p>
+                                <p id="skor-akhir" class="display-3 fw-bold text-danger"></p>
+                                <div class="d-grid gap-2 d-md-block mt-4">
+                                    <button id="back-to-menu-btn" class="btn btn-secondary">Pilih Kasus Lain</button>
+                                </div>
                             </div>
 
-                            <div id="back-button-area" class="text-center mt-4">
-                                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+                            <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
+                                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-dark">
+                                    <i class="bi bi-house-door-fill"></i> Dashboard
                                 </a>
+                                {% if materi_asal_pk %}
+                                <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-book-half"></i> Materi
+                                </a>
+                                {% endif %}
                             </div>
 
                         </div>
@@ -123,11 +163,11 @@
                         <div class="card-footer bg-white border-0 p-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span id="progress-text" class="text-muted small">Langkah 1 dari ...</span>
-                                <span class="text-muted small">Total Poin: <strong id="poin-display" class="text-warning">{{ profil_siswa.total_poin|default:0 }}</strong></span>
+                                <span class="text-muted small">Total Poin: <strong id="poin-display" class="text-danger">{{ profil_siswa.total_poin|default:0 }}</strong></span>
                             </div>
                             
                             <div class="progress" style="height: 10px;">
-                                <div id="progress-bar" class="progress-bar bg-info" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                <div id="progress-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"></div>
                             </div>
                         </div>
 
@@ -140,143 +180,182 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const storyData = {{ cerita_json|safe }};
-        let totalPoin = {{ profil_siswa.total_poin|default:0 }};
+        const gameData = {{ game_data_json|safe }};
+        let currentLevelIndex = 0;
         let currentStepIndex = 0;
-        let isClickable = true;
+        let levelScore = 0;
+        let totalPoinServer = {{ profil_siswa.total_poin|default:0 }};
 
-        // Ambil elemen UI
+        // UI Elements
+        const levelSelectScreen = document.getElementById('level-select-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const levelGridContainer = document.getElementById('level-grid-container');
+        
         const storyTitle = document.getElementById('story-title');
+        const illustrationEl = document.getElementById('game-illustration');
+        const gameContent = document.getElementById('game-content');
         const storyText = document.getElementById('story-text');
+        const interactionArea = document.getElementById('interaction-area');
         const questionArea = document.getElementById('question-area');
         const questionText = document.getElementById('question-text');
         const answerOptions = document.getElementById('answer-options');
-        const continueButtonArea = document.getElementById('continue-button-area');
+        const continueBtnArea = document.getElementById('continue-btn-area');
         const continueBtn = document.getElementById('continue-btn');
+        
         const hasilContainer = document.getElementById('hasil-container');
-        const poinDisplay = document.getElementById('poin-display');
+        const skorAkhirEl = document.getElementById('skor-akhir');
+        const backToMenuBtn = document.getElementById('back-to-menu-btn');
+        
         const progressText = document.getElementById('progress-text');
         const progressBar = document.getElementById('progress-bar');
-        const backButtonArea = document.getElementById('back-button-area');
-        
-        // Fungsi untuk memuat langkah cerita/pertanyaan
-        function loadStep(index) {
-            // Sembunyikan tombol kembali saat game berlangsung
-            backButtonArea.classList.add('d-none');
+        const poinDisplay = document.getElementById('poin-display');
+
+        // --- 1. Inisialisasi Menu Level ---
+        function buildLevelGrid() {
+            levelGridContainer.innerHTML = '';
+            gameData.forEach((level, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'level-box';
+                btn.innerHTML = `
+                    <i class="bi bi-search"></i> 
+                    <span>Kasus ${level.level}</span>
+                    <span class="small fw-normal text-muted mt-1">${level.title}</span>
+                `;
+                btn.onclick = () => startLevel(index);
+                levelGridContainer.appendChild(btn);
+            });
+        }
+
+        // --- 2. Mulai Level ---
+        function startLevel(index) {
+            currentLevelIndex = index;
+            currentStepIndex = 0;
+            levelScore = 0;
+
+            // UI Transition
+            levelSelectScreen.classList.add('hide');
+            gameScreen.classList.add('show');
+            gameContent.classList.remove('d-none');
+            hasilContainer.classList.add('d-none');
             
-            if (!storyData || !storyData.steps || index >= storyData.steps.length) {
-                // Game Selesai
-                storyText.parentElement.classList.add('d-none');
-                questionArea.classList.add('d-none');
-                continueButtonArea.classList.add('d-none');
-                hasilContainer.classList.remove('d-none');
-                progressText.innerText = "Selesai!";
-                progressBar.style.width = "100%";
+            // Set Background
+            const levelData = gameData[currentLevelIndex];
+            if (illustrationEl) {
+                illustrationEl.style.backgroundImage = `url('${levelData.image_url}')`;
+            }
+            storyTitle.innerText = levelData.title;
+
+            loadStep();
+        }
+
+        // --- 3. Load Step Cerita/Soal ---
+        function loadStep() {
+            const levelData = gameData[currentLevelIndex];
+            
+            if (currentStepIndex >= levelData.steps.length) {
+                finishLevel();
                 return;
             }
 
-            const step = storyData.steps[index];
-            storyTitle.innerText = storyData.title;
+            const step = levelData.steps[currentStepIndex];
             storyText.innerText = step.text;
 
-            // Update progress
-            progressText.innerText = `Langkah ${index + 1} dari ${storyData.steps.length}`;
-            progressBar.style.width = `${((index) / storyData.steps.length) * 100}%`;
+            // Update Gambar per Langkah
+            if (illustrationEl && step.image_url) {
+                illustrationEl.style.backgroundImage = `url('${step.image_url}')`;
+            }
+
+            // Update Progress
+            const totalSteps = levelData.steps.length;
+            progressText.innerText = `Langkah ${currentStepIndex + 1} dari ${totalSteps}`;
+            progressBar.style.width = `${((currentStepIndex) / totalSteps) * 100}%`;
 
             if (step.question) {
-                // Jika ada pertanyaan di langkah ini
+                // Tampilkan Soal
+                continueBtnArea.classList.add('d-none');
                 questionArea.classList.remove('d-none');
-                continueButtonArea.classList.add('d-none');
                 questionText.innerText = step.question;
-                answerOptions.innerHTML = ''; // Kosongkan pilihan sebelumnya
+                answerOptions.innerHTML = '';
 
                 step.options.forEach(option => {
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-light answer-btn';
-                    button.innerText = option;
-                    button.addEventListener('click', () => checkAnswer(option, step.correct_answer, button));
-                    answerOptions.appendChild(button);
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-light answer-btn';
+                    btn.innerText = option;
+                    btn.onclick = () => checkAnswer(option, step.correct_answer, btn);
+                    answerOptions.appendChild(btn);
                 });
-
             } else {
-                // Jika hanya cerita, tampilkan tombol "Lanjutkan"
+                // Hanya Cerita -> Tampilkan Tombol Lanjut
                 questionArea.classList.add('d-none');
-                continueButtonArea.classList.remove('d-none');
+                continueBtnArea.classList.remove('d-none');
             }
-            isClickable = true;
         }
-        
-        // Event listener untuk tombol "Lanjutkan"
-        continueBtn.addEventListener('click', () => {
+
+        // --- 4. Event Tombol Lanjut ---
+        continueBtn.onclick = () => {
             currentStepIndex++;
-            loadStep(currentStepIndex);
-        });
+            loadStep();
+        };
 
-        // Fungsi saat jawaban diklik
-        function checkAnswer(chosenAnswer, correctAnswer, clickedButton) {
-            if (!isClickable) return;
-            isClickable = false;
-            
-            const isCorrect = (chosenAnswer === correctAnswer);
-            const allButtons = answerOptions.querySelectorAll('.answer-btn');
+        // --- 5. Cek Jawaban ---
+        function checkAnswer(chosenAnswer, correctAnswer, btnKlik) {
+            const allBtn = answerOptions.querySelectorAll('button');
+            allBtn.forEach(b => b.disabled = true);
 
-            if (isCorrect) {
-                clickedButton.classList.add('btn-success');
+            if (chosenAnswer === correctAnswer) {
+                btnKlik.classList.add('btn-success');
+                levelScore += 25; // Poin besar untuk misteri
+                kirimPoinKeServer(25);
             } else {
-                clickedButton.classList.add('btn-danger');
-                // Tampilkan jawaban yang benar
-                allButtons.forEach(btn => {
-                    if (btn.innerText === correctAnswer) {
-                        btn.classList.add('btn-success');
-                    }
+                btnKlik.classList.add('btn-danger');
+                allBtn.forEach(b => {
+                    if (b.innerText === correctAnswer) b.classList.add('btn-success');
                 });
             }
-            
-            allButtons.forEach(btn => btn.disabled = true);
-            saveAnswer(isCorrect);
-            
+
             setTimeout(() => {
                 currentStepIndex++;
-                loadStep(currentStepIndex);
-            }, 2000); // Jeda 2 detik untuk tunjukkan feedback
+                loadStep();
+            }, 2000);
         }
 
-        // Fungsi untuk simpan poin ke server
-        function saveAnswer(isCorrect) {
-            if (isCorrect) {
-                totalPoin += 15; // Tambah 15 poin (sesuaikan jika perlu)
-                poinDisplay.innerText = totalPoin;
-            }
+        // --- 6. Level Selesai ---
+        function finishLevel() {
+            gameContent.classList.add('d-none');
+            hasilContainer.classList.remove('d-none');
+            
+            skorAkhirEl.innerText = levelScore;
+            progressText.innerText = "Kasus Ditutup!";
+            progressBar.style.width = "100%";
+        }
 
-            fetch("{% url 'api_simpan_jawaban' %}", {
+        // --- 7. Navigasi ---
+        backToMenuBtn.onclick = () => {
+            gameScreen.classList.remove('show');
+            levelSelectScreen.classList.remove('hide');
+        };
+
+        // --- 8. Kirim Poin ---
+        function kirimPoinKeServer(poin) {
+            fetch("{% url 'api_simpan_poin' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: JSON.stringify({
-                    pertanyaan_id: {{ pertanyaan_id|default:"null" }},
-                    jawaban_benar: isCorrect
-                })
+                body: JSON.stringify({ 'poin_didapat': poin })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                if(data.total_poin_baru) {
-                    totalPoin = data.total_poin_baru;
-                    poinDisplay.innerText = totalPoin;
+                if (data.status === 'sukses') {
+                    totalPoinServer = data.total_poin_baru;
+                    poinDisplay.innerText = totalPoinServer;
                 }
-            })
-            .catch(error => console.error('Error:', error));
+            });
         }
 
-        // Mulai game
-        if (storyData) {
-            loadStep(currentStepIndex);
-        } else {
-            // Tampilkan pesan error jika JSON gagal dimuat
-            storyText.innerText = "Error: Gagal memuat data cerita. Pastikan 'cerita_predator' ada di database PertanyaanArena.";
-            backButtonArea.classList.remove('d-none');
-        }
+        // Mulai
+        buildLevelGrid();
     });
 </script>
 {% endblock %}

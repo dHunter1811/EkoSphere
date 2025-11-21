@@ -1,0 +1,365 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Membatalkan Sticky Footer */
+    body { display: block !important; height: auto !important; min-height: 0 !important; }
+    main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+
+    /* CSS Menu Level - NUANSA BIRU (CYAN) */
+    #level-select-screen {
+        background-color: #fff; border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    .level-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 1rem;
+    }
+    .level-box {
+        /* Biru Muda (Cyan-ish) */
+        background-color: #cff4fc; 
+        border: 2px solid #9eeaf9;
+        color: #055160; /* Teks Biru Tua */
+        
+        border-radius: 10px; padding: 1.5rem; font-size: 1.5rem;
+        font-weight: bold; text-align: center; cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .level-box:hover { 
+        background-color: #b6effb; 
+        border-color: #0dcaf0; 
+        transform: translateY(-3px);
+    }
+    .level-box i {
+        display: block; font-size: 2rem;
+        margin-bottom: 0.5rem; color: #0dcaf0; /* Ikon Biru */
+    }
+    
+    /* Tampilan Layar Game */
+    #game-screen {
+        visibility: hidden; opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    #game-screen.show { visibility: visible; opacity: 1; }
+    #level-select-screen.hide { display: none; }
+    
+    .arena-illustration {
+        background-size: cover; background-position: center center;
+        background-color: #e9ecef;
+        min-height: 400px; border-radius: 15px 0 0 15px;
+        transition: background-image 0.5s ease-in-out;
+    }
+    
+    /* Tampilan Tombol Organisme */
+    .organism-btn {
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    .organism-btn:hover {
+        transform: scale(1.05);
+    }
+    .organism-btn.disabled {
+        filter: grayscale(100%);
+        opacity: 0.6;
+        pointer-events: none;
+        background-color: #e9ecef;
+        border-color: #ced4da;
+        color: #6c757d;
+    }
+    
+    /* Header Game Biru */
+    .game-card-header {
+        background-color: #0dcaf0; /* Biru Info */
+        color: white; /* Teks Putih agar kontras */
+        padding: 1rem 1.5rem;
+    }
+
+    @media (max-width: 767px) {
+        .arena-illustration {
+            min-height: 200px;
+            border-radius: 15px 15px 0 0;
+        }
+        .arena-container {
+            border-radius: 0 0 15px 15px;
+        }
+    }
+</style>
+
+<div class="container text-dark my-5">
+
+    <div id="level-select-screen" class="p-4 p-md-5">
+        <div class="text-center mb-4">
+            <h1 class="display-5 fw-bold text-info">Arena: Energy Flow Builder</h1>
+            <p class="fs-4 text-muted">Pilih level untuk membangun rantai makanan.</p>
+        </div>
+        
+        <div class="level-grid" id="level-grid-container">
+            </div>
+        
+        <div class="text-center mt-5 d-flex justify-content-center gap-2">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house-door-fill me-1"></i> Dashboard
+            </a>
+            
+            {% if materi_asal_pk %}
+            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-info">
+                <i class="bi bi-book-half me-1"></i> Materi Energi
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="game-screen" class="">
+        <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+            <div class="row g-0 h-100 align-items-stretch">
+                
+                <div class="col-md-5 d-none d-md-block">
+                    <div class="arena-illustration" id="game-illustration"></div>
+                </div>
+                
+                <div class="col-md-7 col-12">
+                    
+                    <div class="game-card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0 fw-bold" id="game-title">...</h3>
+                        <button class="btn btn-light btn-sm text-info fw-bold" id="back-to-menu-header-btn">
+                            <i class="bi bi-list-ul"></i> Menu Level
+                        </button>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <div id="rantai-terbangun" class="alert alert-info text-center fs-5 border-info shadow-sm">
+                            <strong>Rantai Makanan:</strong> ...
+                        </div>
+                        
+                        <p id="instruksi-simulasi" class="text-center fw-bold fs-5 my-4 text-dark">
+                            Ketuk organisme yang berperan sebagai Produsen.
+                        </p>
+                        
+                        <div id="pilihan-organisme" class="d-flex justify-content-center flex-wrap gap-2 p-3 border rounded bg-light">
+                            </div>
+                        
+                        <div class="text-center mt-3">
+                            <div id="result-container" class="mt-3 fw-bold fs-5"></div>
+                            
+                            <div id="game-nav-buttons" class="mt-3 d-none">
+                                <div class="d-grid gap-2 d-md-block mb-3">
+                                    <button id="next-level-btn" class="btn btn-warning fw-bold">Lanjut ke Level Berikutnya</button>
+                                    <button id="back-to-menu-btn" class="btn btn-outline-secondary">Kembali ke Menu Level</button>
+                                </div>
+                                
+                                <div class="pt-3 border-top d-flex justify-content-center gap-2">
+                                    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-dark">
+                                        <i class="bi bi-house-door-fill"></i> Dashboard
+                                    </a>
+                                    {% if materi_asal_pk %}
+                                    <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-book-half"></i> Materi
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const gameData = {{ game_data_json|safe }};
+    let currentLevelIndex = 0;
+    let currentChain = []; 
+    let currentStep = 0;
+    let organismsInLevel = [];
+
+    // Elemen Layar
+    const levelSelectScreen = document.getElementById('level-select-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const levelGridContainer = document.getElementById('level-grid-container');
+
+    // Elemen Game
+    const gameTitle = document.getElementById('game-title');
+    const illustrationEl = document.getElementById('game-illustration');
+    const rantaiTerbangunEl = document.getElementById('rantai-terbangun');
+    const instruksiEl = document.getElementById('instruksi-simulasi');
+    const pilihanOrganismeEl = document.getElementById('pilihan-organisme');
+    const resultContainer = document.getElementById('result-container');
+    const gameNavButtons = document.getElementById('game-nav-buttons');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const backToMenuHeaderBtn = document.getElementById('back-to-menu-header-btn');
+
+    const instructionText = [
+        "Ketuk organisme yang berperan sebagai Produsen.",
+        "Ketuk organisme yang memakan Produsen (Konsumen I).",
+        "Ketuk organisme yang memakan Konsumen I (Konsumen II).",
+        "Ketuk organisme yang memakan Konsumen II (Konsumen III).",
+        "Ketuk organisme yang memakan Konsumen III (Konsumen IV)."
+    ];
+
+    // --- FUNGSI UTAMA ---
+
+    function showLevelSelectScreen() {
+        gameScreen.classList.remove('show');
+        levelSelectScreen.classList.remove('hide');
+        buildLevelGrid(); 
+    }
+
+    function loadLevel(levelIndex) {
+        currentLevelIndex = levelIndex;
+        const data = gameData[levelIndex];
+        organismsInLevel = data.organisms;
+
+        levelSelectScreen.classList.add('hide');
+        gameScreen.classList.add('show'); 
+        
+        gameTitle.innerText = `Level ${data.level}: ${data.title}`;
+        
+        if (illustrationEl) {
+            illustrationEl.style.backgroundImage = `url('${data.image_url}')`;
+        }
+        
+        // Reset game state
+        currentChain = [];
+        currentStep = 0;
+        resultContainer.innerHTML = '';
+        resultContainer.className = 'mt-3 fw-bold fs-5';
+        gameNavButtons.classList.add('d-none');
+        
+        // Reset alert style
+        rantaiTerbangunEl.className = 'alert alert-info text-center fs-5 border-info shadow-sm';
+        
+        displayStep();
+    }
+    
+    function displayStep() {
+        // Update instruksi
+        instruksiEl.innerText = instructionText[currentStep];
+        
+        // Update rantai makanan
+        if (currentChain.length === 0) {
+             rantaiTerbangunEl.innerText = 'Rantai Makanan: ...';
+        } else {
+             rantaiTerbangunEl.innerText = 'Rantai Makanan: ' + currentChain.map(org => org.nama).join(' → ');
+        }
+        
+        // Buat tombol pilihan
+        pilihanOrganismeEl.innerHTML = '';
+        organismsInLevel.forEach(org => {
+            const orgButton = document.createElement('button');
+            // Gunakan outline-info (Biru) atau outline-primary
+            orgButton.className = 'btn btn-outline-primary organism-btn m-1 px-3 py-2';
+            orgButton.innerText = org.nama;
+            
+            // Cek apakah tombol ini sudah dipilih
+            if (currentChain.find(item => item.id === org.id)) {
+                orgButton.classList.add('disabled');
+                orgButton.classList.remove('btn-outline-primary');
+                orgButton.classList.add('btn-secondary'); // Abu-abu jika sudah dipilih
+            }
+
+            orgButton.addEventListener('click', () => checkAnswer(org));
+            pilihanOrganismeEl.appendChild(orgButton);
+        });
+    }
+
+    function checkAnswer(organism) {
+        let isCorrect = false;
+        
+        if (currentStep === 0) {
+            // Cek Produsen
+            isCorrect = (organism.tipe === 'produsen');
+        } else {
+            // Cek Konsumen
+            const lastOrganism = currentChain[currentChain.length - 1];
+            isCorrect = organism.memakan.includes(lastOrganism.id);
+        }
+
+        if (isCorrect) {
+            // Jawaban benar
+            currentChain.push(organism);
+            currentStep++;
+
+            if (currentStep === organismsInLevel.length) {
+                // Rantai Selesai!
+                rantaiTerbangunEl.innerText = 'Rantai Makanan: ' + currentChain.map(org => org.nama).join(' → ');
+                rantaiTerbangunEl.className = 'alert alert-success text-center fs-5 border-success shadow-sm'; // Ubah jadi hijau
+                
+                instruksiEl.innerText = 'Selamat! Rantai makanan berhasil dibangun!';
+                pilihanOrganismeEl.innerHTML = ''; // Hapus tombol pilihan
+                
+                resultContainer.className = 'alert alert-success mt-3';
+                resultContainer.innerHTML = `Hebat! Level Selesai! <strong>+${organismsInLevel.length * 5} Poin</strong>`;
+                gameNavButtons.classList.remove('d-none');
+                
+                kirimHasilKeServer(true, organismsInLevel.length * 5);
+
+                // Cek tombol next level
+                 if (currentLevelIndex >= gameData.length - 1) {
+                    nextLevelBtn.style.display = 'none';
+                } else {
+                    nextLevelBtn.style.display = 'inline-block';
+                }
+
+            } else {
+                // Lanjut ke langkah berikutnya
+                displayStep();
+            }
+        } else {
+            // Jawaban salah
+            alert('Pilihan kurang tepat, coba lagi!');
+        }
+    }
+    
+    function buildLevelGrid() {
+        levelGridContainer.innerHTML = '';
+        gameData.forEach((level, index) => {
+            const levelBox = document.createElement('button');
+            levelBox.className = 'level-box';
+            levelBox.innerHTML = `<i class="bi bi-share-fill"></i> Level ${level.level}`;
+            levelBox.onclick = () => loadLevel(index);
+            levelGridContainer.appendChild(levelBox);
+        });
+    }
+    
+    // --- NAVIGASI GAME ---
+    backToMenuBtn.onclick = showLevelSelectScreen;
+    backToMenuHeaderBtn.onclick = showLevelSelectScreen;
+    
+    nextLevelBtn.onclick = () => {
+        if (currentLevelIndex < gameData.length - 1) {
+            loadLevel(currentLevelIndex + 1);
+        }
+    };
+    
+    function kirimHasilKeServer(isBenar, poinDidapat) {
+        if (!isBenar) return;
+
+        fetch("{% url 'api_simpan_poin' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'poin_didapat': poinDidapat
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+             console.log('Poin tersimpan:', data);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Mulai aplikasi
+    showLevelSelectScreen();
+});
+</script>
+{% endblock %}

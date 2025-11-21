@@ -2,8 +2,8 @@
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.conf import settings  # Ditambahkan untuk settings.AUTH_USER_MODEL
-from ckeditor.fields import RichTextField  # <-- 1. IMPORT DITAMBAHKAN
+from django.conf import settings
+from ckeditor.fields import RichTextField  # <-- Import ini tetap ada
 
 # Model Pengguna yang bisa jadi Siswa atau Guru
 class User(AbstractUser):
@@ -31,9 +31,11 @@ class SubTopik(models.Model):
     topik = models.ForeignKey(Topik, on_delete=models.CASCADE)
     judul = models.CharField(max_length=200)  # Contoh: "1. Jenis Ekosistem"
     
-    # --- 2. FIELD KONTEN JUGA DI-UPGRADE ---
-    konten = RichTextField(help_text="Isi konten utama untuk sub-topik ini.")
-    # --- AKHIR PERUBAHAN ---
+    # =================================
+    # PERBAIKAN: Kembalikan ke TextField
+    # =================================
+    konten = models.TextField(help_text="Isi konten utama untuk sub-topik ini.")
+    # =================================
     
     urutan = models.IntegerField(default=0)
     pembuat = models.ForeignKey(
@@ -61,13 +63,12 @@ class Pertanyaan(models.Model):
     kuis = models.ForeignKey(Kuis, on_delete=models.CASCADE, related_name="pertanyaan")
     teks_pertanyaan = models.CharField(max_length=255)
     
-    # --- 3. FIELD PENJELASAN DI-UPGRADE ---
+    # BIARKAN INI SEBAGAI RichTextField (SUDAH BENAR)
     penjelasan = RichTextField(
         blank=True, 
         null=True, 
         help_text="Penjelasan mengapa jawaban ini benar (opsional)."
     )
-    # --- AKHIR PERUBAHAN ---
 
     def __str__(self):
         return self.teks_pertanyaan
@@ -113,9 +114,7 @@ class PertanyaanArena(models.Model):
         ("cerita_predator", "Jejak Predator"),
     )
     tipe = models.CharField(max_length=20, choices=TIPE_CHOICES)
-    # Menyimpan data pertanyaan yang fleksibel dalam format JSON
     konten_json = models.JSONField()
-    # Contoh: {'soal': 'Lebah dan Bunga', 'jawaban_benar': 'Mutualisme', 'pilihan': ['A', 'B', 'C']}
 
     def __str__(self):
         return f"{self.get_tipe_display()} - {self.id}"
@@ -140,7 +139,6 @@ class HasilKuis(models.Model):
     waktu_selesai = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Pastikan setiap siswa hanya punya satu entri hasil per kuis
         unique_together = ("siswa", "kuis")
 
     def __str__(self):
@@ -163,23 +161,17 @@ class InfoEkosistem(models.Model):
     def __str__(self):
         return self.nama
 
-# --- MODEL BARU DITAMBAHKAN DI SINI ---
 
-# MODEL BARU 1: Untuk melacak materi apa yang sudah selesai
 class UserMateriProgress(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    # Diperbaiki: Menggunakan model 'SubTopik' Anda
     materi = models.ForeignKey(SubTopik, on_delete=models.CASCADE) 
     completed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Pastikan user tidak bisa menyelesaikan materi yang sama dua kali
         unique_together = ('user', 'materi')
 
-# MODEL BARU 2: Untuk melacak setiap jawaban di kuis
 class QuizAttemptLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    # Diperbaiki: Menggunakan model 'Pertanyaan' Anda
     question = models.ForeignKey(Pertanyaan, on_delete=models.CASCADE) 
     is_correct = models.BooleanField()
     answered_at = models.DateTimeField(auto_now_add=True)

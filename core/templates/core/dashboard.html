@@ -1,6 +1,89 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
+
+<style>
+    /* ... (CSS Peta Ekspedisi Anda - tidak berubah) ... */
+    .expedition-map {
+        position: relative;
+        padding-left: 40px;
+    }
+    .expedition-map::before {
+        content: '';
+        position: absolute;
+        left: 58px;
+        top: 20px;
+        bottom: 20px;
+        width: 4px;
+        background-color: #e0e0e0;
+        z-index: 1;
+    }
+    .step {
+        position: relative;
+        margin-bottom: 20px;
+        z-index: 2;
+    }
+    .step-icon {
+        position: absolute;
+        left: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border: 4px solid #fff;
+    }
+    .step-content {
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        background-color: #fff;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    .step.completed .step-icon {
+        background-color: #198754;
+        color: white;
+    }
+    .step.completed .step-content {
+        background-color: #f8f9fa;
+        border-color: #d1d1d1;
+    }
+    .step.completed .step-content a {
+        color: #212529;
+    }
+    .step.current .step-icon {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .step.current .step-content {
+        border-color: #0d6efd;
+        background-color: #f0f7ff;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+    }
+    .step.current .step-content a {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .step.locked .step-icon {
+        background-color: #adb5bd;
+        color: #f8f9fa;
+    }
+    .step.locked .step-content {
+        background-color: #f8f9fa;
+        border-style: dashed;
+    }
+    .step.locked .step-content a {
+        color: #6c757d;
+        pointer-events: none;
+        text-decoration: none;
+    }
+</style>
 <div class="p-5 mb-4 bg-white rounded-3 shadow-sm text-dark">
     <h1 class="display-5 fw-bold">Selamat Datang di EkoSphere!</h1>
     <p class="col-md-8 fs-4">Media Pembelajaran Interaktif untuk Ekosistem Lahan Basah.</p>
@@ -12,36 +95,24 @@
     <style>
         #penghuniSlider .carousel-control-prev,
         #penghuniSlider .carousel-control-next {
-            /* 1. Beri latar belakang agar kontras */
             background-color: rgba(0, 0, 0, 0.4); 
-            
-            /* 2. Buat jadi lingkaran kecil */
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            
-            /* 3. Posisikan di tengah vertikal */
             top: 50%;
             transform: translateY(-50%);
         }
-        
-        /* 4. Beri jarak dari tepi */
-        #penghuniSlider .carousel-control-prev {
-            left: 1rem;
-        }
-        #penghuniSlider .carousel-control-next {
-            right: 1rem;
-        }
+        #penghuniSlider .carousel-control-prev { left: 1rem; }
+        #penghuniSlider .carousel-control-next { right: 1rem; }
     </style>
+
     <div id="penghuniSlider" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
         <div class="carousel-inner">
-            
             {% for item in info_items %}
                 {% if forloop.counter0|divisibleby:3 %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
                     <div class="row g-3">
                 {% endif %}
-
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm h-100 text-dark">
                         <img src="{{ item.gambar_url }}" class="card-img-top" alt="{{ item.nama }}" style="height: 180px; object-fit: cover;">
@@ -51,10 +122,9 @@
                         </div>
                     </div>
                 </div>
-
                 {% if forloop.counter|divisibleby:3 or forloop.last %}
-                    </div> </div> {% endif %}
-
+                    </div> </div>
+                {% endif %}
             {% empty %}
                 <div class="carousel-item active">
                     <div class="d-flex justify-content-center align-items-center" style="height: 250px; background-color: #f8f9fa;">
@@ -63,7 +133,6 @@
                 </div>
             {% endfor %}
         </div>
-
         {% if info_items.count > 3 %}
         <button class="carousel-control-prev" type="button" data-bs-target="#penghuniSlider" data-bs-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -79,42 +148,141 @@
 
 
 <div class="row text-dark">
-    <div class="col-lg-7 mb-4">
-        <div class="card shadow-sm h-100">
+    <div class="col-lg-7 mb-4 d-flex flex-column">
+        
+        <div class="card shadow-sm mb-4 flex-grow-1"> 
             <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-book-half"></i> Materi Pembelajaran</h4>
+                <h4 class="mb-0"><i class="bi bi-map-fill"></i> Ekspedisi Rawa Gambut</h4>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
+                <div class="expedition-map">
+                    
                     {% for subtopik in daftar_materi %}
-                    <a href="{% url 'subtopik_detail' pk=subtopik.pk %}"
-                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <span>
-                            <strong class="text-success">{{ subtopik.topik.judul }}</strong> - {{ subtopik.judul }}
-                        </span>
-                        {% if subtopik.kuis.id in completed_quiz_ids %}
-                        <span class="badge bg-success rounded-pill">Selesai</span>
+                        
+                        {% if subtopik.id in completed_materi_ids %}
+                            {% with status="completed" icon="bi-check-lg" %}
+                            <div class="step {{ status }}">
+                                <div class="step-icon"><i class="bi {{ icon }}"></i></div>
+                                <div class="step-content shadow-sm">
+                                    <a href="{% url 'subtopik_detail' pk=subtopik.pk %}" class="text-decoration-none d-block">
+                                        <h5 class="card-title mb-1">{{ subtopik.judul }}</h5>
+                                        <p class="card-text text-muted mb-0">{{ subtopik.topik.judul }}</p>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        
+                        {% elif subtopik.pk == first_unlocked_pk %}
+                            {% with status="current" icon="bi-play-fill" %}
+                            <div class="step {{ status }}">
+                                <div class="step-icon"><i class="bi {{ icon }}"></i></div>
+                                <div class="step-content shadow-sm">
+                                    <a href="{% url 'subtopik_detail' pk=subtopik.pk %}" class="text-decoration-none d-block">
+                                        <h5 class="card-title mb-1">{{ subtopik.judul }}</h5>
+                                        <p class="card-text text-muted mb-0">{{ subtopik.topik.judul }}</p>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
+
+                        {% else %}
+                            {% with status="locked" icon="bi-lock-fill" %}
+                            <div class="step {{ status }}">
+                                <div class="step-icon"><i class="bi {{ icon }}"></i></div>
+                                <div class="step-content shadow-sm">
+                                    <a href="#" class="text-decoration-none d-block">
+                                        <h5 class="card-title mb-1">{{ subtopik.judul }}</h5>
+                                        <p class="card-text text-muted mb-0">{{ subtopik.topik.judul }}</p>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endwith %}
                         {% endif %}
-                    </a>
+                    
                     {% empty %}
-                    <p class="text-muted p-3">Belum ada materi yang tersedia.</p>
+                        <p class="text-muted p-3">Belum ada materi ekspedisi yang tersedia.</p>
                     {% endfor %}
+                    
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="col-lg-5 mb-4">
+        
         <div class="card shadow-sm mb-4">
-            <div class="card-body text-center">
-                <h5 class="card-title"><i class="bi bi-joystick"></i> Arena Interaktif</h5>
-                <p class="card-text">Uji pemahamanmu dengan tantangan seru!</p>
-                <a href="{% url 'duel_simbiosis' %}" class="btn btn-warning mx-1">Duel Simbiosis</a>
-                <a href="{% url 'jejak_predator' %}" class="btn btn-info mx-1">Jejak Predator</a>
+            <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Papan Peringkat Teratas</h5>
+                <a href="{% url 'leaderboard' %}" class="btn btn-sm btn-dark">
+                    Lihat Semua <i class="bi bi-arrow-right-short"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for profil in siswa_teratas %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-bold fs-5">
+                                {% if forloop.counter == 1 %}🥇
+                                {% elif forloop.counter == 2 %}🥈
+                                {% elif forloop.counter == 3 %}🥉
+                                {% endif %}
+                                {{ profil.user.username }}
+                            </span>
+                            <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">Jadilah yang pertama di papan peringkat!</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
 
-        <div class="card shadow-sm">
+    </div>
+    
+    <div class="col-lg-5 mb-4 d-flex flex-column">
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-center"><i class="bi bi-joystick"></i> Arena Interaktif</h5>
+                <p class="card-text text-center text-muted small">Uji pemahamanmu dengan tantangan seru!</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'klasifikasi_arena' %}" class="btn btn-success fw-bold">
+                        <i class="bi bi-grid-fill me-2"></i> Klasifikasi Komponen
+                    </a>
+
+                    <a href="{% url 'duel_simbiosis' %}?dari=dashboard" class="btn btn-warning text-dark fw-bold">
+                        <i class="bi bi-lightning-fill me-2"></i> Duel Simbiosis
+                    </a>
+                    
+                    <a href="{% url 'energy_flow_arena' %}" class="btn btn-info text-white fw-bold">
+                        <i class="bi bi-share-fill me-2"></i> Energy Flow Builder
+                    </a>
+
+                    <a href="{% url 'jejak_predator' %}" class="btn btn-danger fw-bold">
+                        <i class="bi bi-search me-2"></i> Jejak Predator
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="bi bi-flag-fill text-danger"></i> Ujian Akhir</h5>
+                
+                {% if semua_materi_selesai %}
+                    <p class="card-text small">Selamat! Anda telah menyelesaikan semua materi.</p>
+                    <a href="{% url 'ujian_akhir' %}" class="btn btn-outline-danger w-100 fw-bold">
+                        <i class="bi bi-play-circle-fill"></i> Mulai Ujian Akhir
+                    </a>
+                {% else %}
+                    <p class="card-text text-muted small">Selesaikan semua materi ekspedisi untuk membuka Ujian Akhir.</p>
+                    <button class="btn btn-secondary w-100" disabled>
+                        <i class="bi bi-lock-fill"></i> Ujian Terkunci
+                    </button>
+                {% endif %}
+                
+            </div>
+        </div>
+
+        <div class="card shadow-sm flex-grow-1">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <ul class="nav nav-tabs card-header-tabs" id="progressTab" role="tablist">
                     <li class="nav-item" role="presentation">
