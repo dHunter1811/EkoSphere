@@ -18,12 +18,41 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            /* Menambahkan padding di atas body agar konten tidak tertutup navbar */
             padding-top: 70px; 
+            position: relative;
+            min-height: 100vh;
+            background-color: #f8f9fa; 
         }
+
+        /* =================================
+        BACKGROUND HUTAN BURAM (LOKAL)
+        =================================
+        */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            
+            /* MENGGUNAKAN GAMBAR LOKAL DARI core/static/images/ */
+            background-image: url("{% static 'images/background.png' %}");
+            
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+
+            /* EFEK VISUAL */
+            filter: blur(6px);  
+            opacity: 0.4;       
+        }
+        /* ================================= */
+
     </style>
 </head>
-<body class="bg-light d-flex flex-column vh-100">
+<body class="d-flex flex-column vh-100">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm fixed-top">
         <div class="container">

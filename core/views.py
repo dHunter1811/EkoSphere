@@ -242,7 +242,6 @@ def detail_siswa_view(request, user_id):
     return render(request, "core/progres.html", context)
 
 
-# --- 4. VIEW SUBTOPIK DETAIL TELAH DIPERBARUI ---
 @login_required
 def subtopik_detail_view(request, pk):
     semua_topik = Topik.objects.all()
@@ -267,22 +266,31 @@ def subtopik_detail_view(request, pk):
         subtopik_selanjutnya = None
     # --- AKHIR LOGIKA NAVIGASI ---
 
-    # --- LOGIKA UNTUK PROGRES MISI (Kuis) ---
+    # --- LOGIKA UNTUK PROGRES MISI (Kuis) DIPERBARUI ---
     topik_aktif = subtopik_aktif.topik
     total_subtopik_misi = topik_aktif.subtopik_set.count()
+    
+    # Ambil objek HasilKuis, bukan hanya count()
+    kuis_selesai_list = [] # Default kosong
     kuis_selesai_count = 0
+
     if request.user.is_authenticated and request.user.role == "Siswa":
-        kuis_selesai_count = HasilKuis.objects.filter(
+        # Ambil semua hasil kuis untuk topik ini
+        hasil_kuis_topik = HasilKuis.objects.filter(
             siswa=request.user, kuis__subtopik__topik=topik_aktif
-        ).count()
+        ).select_related('kuis')
+        
+        kuis_selesai_count = hasil_kuis_topik.count()
+        kuis_selesai_list = hasil_kuis_topik # Simpan queryset untuk di-loop di template
+
     progres_misi_persen = 0
     if total_subtopik_misi > 0:
         progres_misi_persen = (kuis_selesai_count / total_subtopik_misi) * 100
-    # --- AKHIR LOGIKA PROGRES MISI ---
+    # --- AKHIR PERBAIKAN ---
 
     profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
 
-    # --- LOGIKA BARU UNTUK TOMBOL & SIDEBAR ---
+    # --- LOGIKA UNTUK TOMBOL & SIDEBAR ---
     completed_materi_ids = set()
     is_materi_selesai = False
     if request.user.is_authenticated and request.user.role == "Siswa":
@@ -304,6 +312,9 @@ def subtopik_detail_view(request, pk):
         "total_subtopik_misi": total_subtopik_misi,
         "completed_materi_ids": completed_materi_ids,
         "is_materi_selesai": is_materi_selesai,
+        
+        # Tambahkan list ini ke context
+        "kuis_selesai_list": kuis_selesai_list, 
     }
     return render(request, "core/materi_detail.html", context)
 

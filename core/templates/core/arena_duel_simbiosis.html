@@ -3,11 +3,11 @@
 
 {% block content %}
 <style>
-    /* Membatalkan Sticky Footer */
+    /* Membatalkan Sticky Footer dari base.html agar layout pas */
     body { display: block !important; height: auto !important; min-height: 0 !important; }
     main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
-    /* CSS Menu Level */
+    /* CSS Menu Level - NUANSA KUNING */
     #level-select-screen {
         background-color: #fff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05);
     }
@@ -15,13 +15,22 @@
         display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem;
     }
     .level-box {
+        /* Kuning Muda */
         background-color: #fff9c4; 
-        border: 2px solid #f0e68c; border-radius: 10px; padding: 1.5rem;
+        border: 2px solid #f0e68c;
+        border-radius: 10px; padding: 1.5rem;
         font-size: 1.5rem; font-weight: bold; text-align: center; cursor: pointer;
         transition: all 0.2s ease;
     }
-    .level-box:hover { background-color: #fff176; border-color: #fdd835; transform: translateY(-3px); }
-    .level-box i { display: block; font-size: 2rem; margin-bottom: 0.5rem; color: #fbc02d; }
+    .level-box:hover { 
+        background-color: #fff176; 
+        border-color: #fdd835; 
+        transform: translateY(-3px); 
+    }
+    .level-box i { 
+        display: block; font-size: 2rem; margin-bottom: 0.5rem; 
+        color: #fbc02d; /* Kuning Tua */
+    }
 
     /* CSS Game Screen */
     #game-screen { visibility: hidden; opacity: 0; transition: opacity 0.3s ease-in-out; }
@@ -47,28 +56,33 @@
         border-radius: 0 15px 15px 0;
     }
     .game-card { width: 100%; }
-    .game-card .card-header { background-color: #ffc107; color: #000; border: none; padding: 1rem 1.5rem; }
+    
+    /* Header Kuning */
+    .game-card .card-header { 
+        background-color: #ffc107; /* Kuning Warning */
+        color: #000; /* Teks Hitam */
+        border: none; padding: 1rem 1.5rem; 
+    }
 
     /* Tombol Jawaban */
     .answer-btn {
         font-size: 1.1rem; font-weight: 500; text-align: left; padding: 1rem;
         border: 2px solid #e0e0e0; transition: all 0.2s ease;
     }
-    .answer-btn:hover { background-color: #f8f9fa; border-color: #0d6efd; }
+    .answer-btn:hover { 
+        background-color: #fff3cd; /* Kuning Sangat Muda */
+        border-color: #ffc107; 
+    }
     .answer-btn.btn-success { background-color: #198754 !important; border-color: #198754 !important; color: white !important; }
     .answer-btn.btn-danger { background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important; }
 
-    /* =================================
-    CSS BARU: Ikon Jawaban Custom
-    =================================
-    */
+    /* CSS Ikon Jawaban Custom */
     .answer-icon {
         width: 128px;       /* Lebar ikon */
         height: 128px;      /* Tinggi ikon */
         object-fit: contain; /* Agar gambar tidak gepeng */
         margin-left: 10px; /* Jarak dari teks */
     }
-    /* AKHIR CSS BARU */
 
     @media (max-width: 767px) {
         .arena-illustration { 
@@ -85,7 +99,7 @@
 
     <div id="level-select-screen" class="p-4 p-md-5">
         <div class="text-center mb-4">
-            <h1 class="display-5 fw-bold">Arena: Duel Simbiosis</h1>
+            <h1 class="display-5 fw-bold text-warning">Arena: Duel Simbiosis</h1>
             <p class="fs-4 text-muted">Pilih level untuk memulai duel pengetahuan.</p>
         </div>
         
@@ -97,8 +111,8 @@
                 <i class="bi bi-house-door-fill me-1"></i> Dashboard
             </a>
             {% if materi_asal_pk %}
-            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-primary">
-                <i class="bi bi-book-half me-1"></i> Materi Interaksi
+            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-warning text-dark">
+                <i class="bi bi-book-half me-1"></i> Kembali ke Materi
             </a>
             {% endif %}
         </div>
@@ -134,7 +148,7 @@
                                 <p id="skor-akhir" class="display-3 fw-bold text-success"></p>
                                 <div class="d-grid gap-2 d-md-block mt-4">
                                     <button id="back-to-menu-btn" class="btn btn-secondary">Menu Level</button>
-                                    <button id="next-level-btn" class="btn btn-warning fw-bold">Level Selanjutnya</button>
+                                    <button id="next-level-btn" class="btn btn-warning fw-bold text-dark">Level Selanjutnya</button>
                                 </div>
 
                                 <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
@@ -142,7 +156,7 @@
                                         <i class="bi bi-house-door-fill"></i> Dashboard
                                     </a>
                                     {% if materi_asal_pk %}
-                                    <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-sm btn-outline-warning text-dark">
                                         <i class="bi bi-book-half"></i> Materi
                                     </a>
                                     {% endif %}
@@ -200,7 +214,10 @@ document.addEventListener('DOMContentLoaded', function () {
         gameData.forEach((level, index) => {
             const btn = document.createElement('button');
             btn.className = 'level-box';
-            btn.innerHTML = `<i class="bi bi-lightning-fill"></i> Level ${level.level}`;
+            btn.innerHTML = `
+                <i class="bi bi-lightning-fill"></i> 
+                <span>Level ${level.level}</span>
+            `;
             btn.onclick = () => startLevel(index);
             levelGridContainer.appendChild(btn);
         });
@@ -246,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // ---------------------------------------------
-        // PERBAIKAN: Ganti Ikon Bootstrap dengan Gambar
+        // Ikon Kustom
         // ---------------------------------------------
         const answerImages = {
             'Mutualisme': "{% static 'images/icons/icon_mutualisme.jpg' %}",
@@ -258,7 +275,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const btn = document.createElement('button');
             btn.className = 'btn btn-light answer-btn d-flex justify-content-between align-items-center';
             
-            // Gunakan gambar default jika tidak ditemukan di mapping
             const imgSrc = answerImages[pilihan] || "{% static 'images/icons/default.png' %}";
 
             btn.innerHTML = `
