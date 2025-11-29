@@ -102,9 +102,24 @@ class ProfilSiswa(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     total_poin = models.IntegerField(default=0)
     lencana = models.ManyToManyField(Lencana, blank=True)
+    
+    # --- TAMBAHKAN FIELD INI ---
+    total_waktu_akses = models.IntegerField(default=0, help_text="Total waktu akses dalam detik")
 
     def __str__(self):
         return f"Profil {self.user.username}"
+
+    # --- TAMBAHKAN METODE INI ---
+    def get_waktu_formatted(self):
+        """Mengubah detik menjadi format Jam dan Menit"""
+        jam = self.total_waktu_akses // 3600
+        sisa_detik = self.total_waktu_akses % 3600
+        menit = sisa_detik // 60
+        
+        if jam > 0:
+            return f"{jam} Jam {menit} Menit"
+        else:
+            return f"{menit} Menit"
 
 
 class PertanyaanArena(models.Model):

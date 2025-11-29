@@ -40,7 +40,7 @@ def is_siswa(user):
     return user.is_authenticated and user.role == "Siswa"
 
 
-# --- 1. FUNGSI DASHBOARD VIEW TELAH DIPERBAIKI ---
+# --- 1. FUNGSI DASHBOARD DENGAN LOGIKA KKM ---
 @login_required
 def dashboard_view(request):
 
@@ -49,27 +49,54 @@ def dashboard_view(request):
 
     elif request.user.role == "Siswa":
         profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
-        
-        # Ambil hasil kuis (pengurutan tidak lagi diperlukan untuk grafik)
-        hasil_kuis_siswa = HasilKuis.objects.filter(siswa=request.user)
+        hasil_kuis_siswa = HasilKuis.objects.filter(siswa=request.user).order_by('kuis__subtopik__urutan')
         
         semua_subtopik = SubTopik.objects.all().order_by('topik__urutan', 'urutan')
-        completed_materi_ids = set(
+        
+        # 1. Materi yang sudah "Dibaca" (Tandai Selesai)
+        read_materi_ids = set(
             UserMateriProgress.objects.filter(user=request.user).values_list('materi_id', flat=True)
         )
         
+        # 2. Materi yang "Lulus Kuis" (Skor >= 75)
+        # Kita ambil ID SubTopik yang kuisnya sudah lulus
+        passed_quiz_subtopik_ids = set(
+            HasilKuis.objects.filter(
+                siswa=request.user, 
+                skor__gte=75
+            ).values_list('kuis__subtopik_id', flat=True)
+        )
+
+        # 3. Tentukan "Posisi Saat Ini" (First Unlocked)
+        # Logika: Materi terkunci jika materi SEBELUMNYA belum (Dibaca AND Lulus)
         first_unlocked_pk = None
+        completed_materi_ids = set() # Ini untuk visualisasi centang hijau
+
         for subtopik in semua_subtopik:
-            if subtopik.id not in completed_materi_ids:
+            # Cek apakah materi ini sudah selesai sepenuhnya (Baca + Lulus)
+            is_read = subtopik.id in read_materi_ids
+            
+            # Cek status lulus kuis (jika ada kuis)
+            has_quiz = hasattr(subtopik, 'kuis')
+            is_passed = subtopik.id in passed_quiz_subtopik_ids if has_quiz else True # Kalau gak ada kuis, dianggap lulus
+            
+            if is_read and is_passed:
+                completed_materi_ids.add(subtopik.id)
+            else:
+                # Jika belum selesai (entah belum baca atau belum lulus),
+                # maka ini adalah materi aktif saat ini.
+                # Materi setelah ini akan otomatis terkunci oleh loop.
                 first_unlocked_pk = subtopik.pk
                 break
         
+        # Jika semua selesai
         if first_unlocked_pk is None and semua_subtopik.exists():
             first_unlocked_pk = semua_subtopik.last().pk
             
         total_materi_count = semua_subtopik.count()
         semua_materi_selesai = (len(completed_materi_ids) == total_materi_count)
 
+        # ... (Logika lencana, info_items, dll TETAP SAMA) ...
         lencana_selanjutnya = (
             Lencana.objects.exclude(id__in=profil_siswa.lencana.all())
             .order_by("syarat_poin")
@@ -77,16 +104,11 @@ def dashboard_view(request):
         )
         progres_persen = 0
         if lencana_selanjutnya and lencana_selanjutnya.syarat_poin > 0:
-            progres_persen = (
-                profil_siswa.total_poin / lencana_selanjutnya.syarat_poin
-            ) * 100
-            if progres_persen > 100:
-                progres_persen = 100
+            progres_persen = (profil_siswa.total_poin / lencana_selanjutnya.syarat_poin) * 100
+            if progres_persen > 100: progres_persen = 100
         
         info_items = InfoEkosistem.objects.order_by("?")[:6]
         siswa_teratas = ProfilSiswa.objects.filter(user__role="Siswa").order_by('-total_poin')[:3]
-
-        # --- LOGIKA GRAFIK TELAH DIHAPUS DARI SINI ---
 
         context = {
             "profil_siswa": profil_siswa,
@@ -99,8 +121,6 @@ def dashboard_view(request):
             "first_unlocked_pk": first_unlocked_pk,
             "semua_materi_selesai": semua_materi_selesai,
             "siswa_teratas": siswa_teratas,
-            
-            # --- DATA GRAFIK TELAH DIHAPUS DARI CONTEXT ---
         }
         return render(request, "core/dashboard.html", context)
 
@@ -247,10 +267,12 @@ def subtopik_detail_view(request, pk):
     semua_topik = Topik.objects.all()
     subtopik_aktif = get_object_or_404(SubTopik, pk=pk)
 
-    # --- LOGIKA UNTUK NAVIGASI ---
+    # --- LOGIKA NAVIGASI & PENGUNCIAN (DIPERBARUI) ---
     semua_subtopik_terurut = list(
         SubTopik.objects.all().order_by("topik__urutan", "urutan")
     )
+    
+    # 1. Tentukan Navigasi Prev/Next
     try:
         current_index = semua_subtopik_terurut.index(subtopik_aktif)
         subtopik_sebelumnya = (
@@ -264,43 +286,69 @@ def subtopik_detail_view(request, pk):
     except ValueError:
         subtopik_sebelumnya = None
         subtopik_selanjutnya = None
-    # --- AKHIR LOGIKA NAVIGASI ---
 
-    # --- LOGIKA UNTUK PROGRES MISI (Kuis) DIPERBARUI ---
-    topik_aktif = subtopik_aktif.topik
-    total_subtopik_misi = topik_aktif.subtopik_set.count()
-    
-    # Ambil objek HasilKuis, bukan hanya count()
-    kuis_selesai_list = [] # Default kosong
-    kuis_selesai_count = 0
-
-    if request.user.is_authenticated and request.user.role == "Siswa":
-        # Ambil semua hasil kuis untuk topik ini
-        hasil_kuis_topik = HasilKuis.objects.filter(
-            siswa=request.user, kuis__subtopik__topik=topik_aktif
-        ).select_related('kuis')
-        
-        kuis_selesai_count = hasil_kuis_topik.count()
-        kuis_selesai_list = hasil_kuis_topik # Simpan queryset untuk di-loop di template
-
-    progres_misi_persen = 0
-    if total_subtopik_misi > 0:
-        progres_misi_persen = (kuis_selesai_count / total_subtopik_misi) * 100
-    # --- AKHIR PERBAIKAN ---
-
-    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
-
-    # --- LOGIKA UNTUK TOMBOL & SIDEBAR ---
+    # 2. Ambil Progres Materi (Completed)
     completed_materi_ids = set()
-    is_materi_selesai = False
     if request.user.is_authenticated and request.user.role == "Siswa":
         completed_materi_ids = set(
             UserMateriProgress.objects.filter(user=request.user).values_list(
                 "materi_id", flat=True
             )
         )
-        is_materi_selesai = subtopik_aktif.id in completed_materi_ids
+
+    # 3. Hitung Materi yang 'Accessible' (Terbuka)
+    # Logika: Materi pertama selalu terbuka. Materi ke-N terbuka jika materi ke-(N-1) selesai.
+    accessible_ids = set()
+    if semua_subtopik_terurut:
+        # Materi pertama selalu terbuka
+        accessible_ids.add(semua_subtopik_terurut[0].id)
+        
+        for i in range(len(semua_subtopik_terurut) - 1):
+            current_sub = semua_subtopik_terurut[i]
+            next_sub = semua_subtopik_terurut[i+1]
+            
+            # Jika materi saat ini sudah selesai, materi berikutnya terbuka
+            if current_sub.id in completed_materi_ids:
+                accessible_ids.add(next_sub.id)
+            
+            # Materi yang sudah selesai pasti accessible
+            if current_sub.id in completed_materi_ids:
+                accessible_ids.add(current_sub.id)
     # --- AKHIR LOGIKA BARU ---
+
+    # --- LOGIKA KUIS & SIDEBAR ---
+    topik_aktif = subtopik_aktif.topik
+    total_subtopik_misi = topik_aktif.subtopik_set.count()
+    kuis_selesai_list = [] 
+    kuis_selesai_count = 0
+    skor_tertinggi = 0
+    passed_kkm = False
+
+    if request.user.is_authenticated and request.user.role == "Siswa":
+        hasil_kuis_topik = HasilKuis.objects.filter(
+            siswa=request.user, kuis__subtopik__topik=topik_aktif
+        ).select_related('kuis')
+        kuis_selesai_count = hasil_kuis_topik.count()
+        kuis_selesai_list = hasil_kuis_topik
+
+        if hasattr(subtopik_aktif, 'kuis'):
+            try:
+                hasil_ini = HasilKuis.objects.get(siswa=request.user, kuis=subtopik_aktif.kuis)
+                skor_tertinggi = hasil_ini.skor
+                if skor_tertinggi >= 75:
+                    passed_kkm = True
+            except HasilKuis.DoesNotExist:
+                skor_tertinggi = 0
+        else:
+            passed_kkm = True
+
+    progres_misi_persen = 0
+    if total_subtopik_misi > 0:
+        progres_misi_persen = (kuis_selesai_count / total_subtopik_misi) * 100
+
+    profil_siswa, created = ProfilSiswa.objects.get_or_create(user=request.user)
+    is_materi_selesai = subtopik_aktif.id in completed_materi_ids
+    can_proceed = is_materi_selesai and passed_kkm
 
     context = {
         "semua_topik": semua_topik,
@@ -312,12 +360,15 @@ def subtopik_detail_view(request, pk):
         "total_subtopik_misi": total_subtopik_misi,
         "completed_materi_ids": completed_materi_ids,
         "is_materi_selesai": is_materi_selesai,
+        "kuis_selesai_list": kuis_selesai_list,
+        "passed_kkm": passed_kkm,
+        "skor_tertinggi": skor_tertinggi,
+        "can_proceed": can_proceed,
         
-        # Tambahkan list ini ke context
-        "kuis_selesai_list": kuis_selesai_list, 
+        # KIRIM DATA INI KE TEMPLATE
+        "accessible_ids": accessible_ids, 
     }
     return render(request, "core/materi_detail.html", context)
-
 
 # --- 5. FUNGSI KUIS_VIEW TELAH DIPERBARUI ---
 @login_required
@@ -1052,3 +1103,18 @@ def energy_flow_view(request):
         "materi_asal_pk": materi_asal_pk,
     }
     return render(request, "core/arena_energy_flow.html", context)
+
+@login_required
+@require_POST
+def api_update_waktu_view(request):
+    """API untuk menerima heartbeat dan update waktu akses siswa"""
+    if request.user.role == "Siswa":
+        try:
+            profil = request.user.profilsiswa
+            # Tambahkan 60 detik (1 menit) setiap kali dipanggil
+            profil.total_waktu_akses += 60 
+            profil.save()
+            return JsonResponse({"status": "sukses"})
+        except ProfilSiswa.DoesNotExist:
+            return JsonResponse({"status": "gagal"}, status=404)
+    return JsonResponse({"status": "diabaikan"})

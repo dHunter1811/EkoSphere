@@ -46,19 +46,12 @@
         flex-grow: 0;
         flex-shrink: 0;
         position: relative;
-        /* =================================
-        PERBAIKAN: 'overflow: hidden;' DIHAPUS 
-        =================================
-        */
     }
     .podium-card:hover {
         transform: translateY(-8px) scale(1.02);
         box-shadow: 0 12px 30px rgba(0,0,0,0.15);
     }
     
-    /* Efek ::before dihapus karena memerlukan overflow: hidden
-    */
-
     .podium-card .rank-badge {
         position: absolute;
         top: -15px;
@@ -77,7 +70,7 @@
 
     /* Spesifik untuk Peringkat 1 */
     .podium-rank-1 {
-        height: 320px;
+        height: 340px; /* Sedikit ditinggikan untuk muat waktu */
         width: 250px;
         border-bottom: 8px solid #FFD700;
         margin-bottom: 0;
@@ -95,7 +88,7 @@
 
     /* Spesifik untuk Peringkat 2 & 3 */
     .podium-rank-2, .podium-rank-3 {
-        height: 280px;
+        height: 300px; /* Sedikit ditinggikan untuk muat waktu */
         width: 220px;
         margin-bottom: 0;
     }
@@ -143,15 +136,22 @@
         font-size: 1.3rem;
         color: #333;
         margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
     .podium-card .points {
-        color: #6c757d;
+        color: #198754; /* Hijau untuk poin */
+        font-weight: bold;
         font-size: 1.1rem;
+        margin-bottom: 0.2rem;
+    }
+    .podium-card .time {
+        font-size: 0.9rem;
+        color: #6c757d;
     }
 
     /* My Rank Card */
     .my-rank-card {
-        background-color: #e0f7fa;
+        background-color: #e0f7fa; /* Warna biru muda */
         border: 2px solid #00bcd4;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -170,7 +170,7 @@
         margin-right: 15px;
     }
     .my-rank-card .points-badge {
-        background-color: #ffc107;
+        background-color: #ffc107; /* Warna kuning */
         color: #333;
         font-size: 1.2rem;
         padding: .5em 1em;
@@ -231,15 +231,16 @@
 <div class="row justify-content-center">
         <div class="col-md-11 col-lg-10">
 
-            
-{% if daftar_peringkat|length > 0 %}
+            {% if daftar_peringkat|length > 0 %}
             <div class="podium-container">
+                
                 {% if daftar_peringkat|length > 1 %}
                 <div class="podium-card podium-rank-2">
                     <span class="rank-badge bg-secondary text-white">2</span>
                     <img src="{% static 'images/badges/silver_badge.png' %}" alt="Peringkat 2" class="avatar">
                     <p class="username">{{ daftar_peringkat.1.user.username }}</p>
                     <p class="points">{{ daftar_peringkat.1.total_poin }} Poin</p>
+                    <p class="time"><i class="bi bi-clock"></i> {{ daftar_peringkat.1.get_waktu_formatted }}</p>
                 </div>
                 {% endif %}
 
@@ -248,6 +249,7 @@
                     <img src="{% static 'images/badges/gold_badge.png' %}" alt="Peringkat 1" class="avatar">
                     <p class="username">{{ daftar_peringkat.0.user.username }}</p>
                     <p class="points">{{ daftar_peringkat.0.total_poin }} Poin</p>
+                    <p class="time"><i class="bi bi-clock"></i> {{ daftar_peringkat.0.get_waktu_formatted }}</p>
                 </div>
                 
                 {% if daftar_peringkat|length > 2 %}
@@ -256,13 +258,13 @@
                     <img src="{% static 'images/badges/bronze_badge.png' %}" alt="Peringkat 3" class="avatar">
                     <p class="username">{{ daftar_peringkat.2.user.username }}</p>
                     <p class="points">{{ daftar_peringkat.2.total_poin }} Poin</p>
+                    <p class="time"><i class="bi bi-clock"></i> {{ daftar_peringkat.2.get_waktu_formatted }}</p>
                 </div>
                 {% endif %}
             </div>
             {% endif %}
 
-            
-<div class="card my-rank-card mb-5">
+            <div class="card my-rank-card mb-5">
                 <div class="card-body d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <div class="rank-icon me-3">
@@ -280,67 +282,52 @@
                 </div>
             </div>
 
-            
-<div class="card leaderboard-table-card">
-                <div class="card-header bg-white border-bottom-0">
-                    <ul class="nav nav-tabs card-header-tabs" id="leaderboardTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="all-time-tab" data-bs-toggle="tab" data-bs-target="#all-time" type="button" role="tab" aria-controls="all-time" aria-selected="true">
-                                <i class="bi bi-globe me-2"></i>Semua Waktu
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link disabled" id="weekly-tab" type="button">
-                                <i class="bi bi-calendar-week me-2"></i>Mingguan (Segera)
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link disabled" id="monthly-tab" type="button">
-                                <i class="bi bi-calendar-month me-2"></i>Bulanan (Segera)
-                            </button>
-                        </li>
-                    </ul>
+            <div class="card leaderboard-table-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-list-ol me-2"></i> Daftar Peringkat Lengkap</h5>
                 </div>
                 
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="all-time" role="tabpanel" aria-labelledby="all-time-tab">
-                        <div class="table-responsive">
-                            <table class="table leaderboard-table table-borderless mb-0">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="ps-4">Peringkat</th>
-                                        <th scope="col">Nama Siswa</th>
-                                        <th scope="col">Poin</th>
-                                        <th scope="col">Lencana</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for profil in daftar_peringkat %}
-                                    {% if forloop.counter > 3 %}
-                                    <tr class="{% if profil.user == request.user %} table-info {% endif %}">
-                                        <td class="ps-4"><span class="rank-number">{{ forloop.counter }}</span></td>
-                                        <td>
-                                            <div class="username-col">
-                                                <img src="{% static 'images/default_avatar.png' %}" alt="Avatar" class="user-avatar">
-                                                <span class="fw-bold">{{ profil.user.username }}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info text-dark rounded-pill">{{ profil.lencana.count }} <i class="bi bi-award-fill"></i></span>
-                                        </td>
-                                    </tr>
-                                    {% endif %}
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted py-4">Belum ada siswa di papan peringkat ini.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table leaderboard-table table-borderless mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="ps-4">Peringkat</th>
+                                    <th scope="col">Nama Siswa</th>
+                                    <th scope="col">Poin</th>
+                                    <th scope="col">Waktu Belajar</th> 
+                                    <th scope="col">Lencana</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profil in daftar_peringkat %}
+                                {% if forloop.counter > 3 %}
+                                <tr class="{% if profil.user == request.user %} table-info {% endif %}">
+                                    <td class="ps-4"><span class="rank-number">{{ forloop.counter }}</span></td>
+                                    <td>
+                                        <div class="username-col">
+                                            <img src="{% static 'images/default_avatar.png' %}" alt="Avatar" class="user-avatar">
+                                            <span class="fw-bold">{{ profil.user.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small"><i class="bi bi-clock me-1"></i> {{ profil.get_waktu_formatted }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-dark rounded-pill">{{ profil.lencana.count }} <i class="bi bi-award-fill"></i></span>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Belum ada siswa di papan peringkat ini.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

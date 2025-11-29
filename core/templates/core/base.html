@@ -37,19 +37,15 @@
             height: 100%;
             z-index: -1;
             
-            /* MENGGUNAKAN GAMBAR LOKAL DARI core/static/images/ */
             background-image: url("{% static 'images/background.png' %}");
             
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
 
-            /* EFEK VISUAL */
             filter: blur(6px);  
             opacity: 0.4;       
         }
-        /* ================================= */
-
     </style>
 </head>
 <body class="d-flex flex-column vh-100">
@@ -127,8 +123,29 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        {% if user.is_authenticated %}
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            function kirimHeartbeat() {
+                // Mengirim sinyal ke server setiap 1 menit untuk menambah waktu akses
+                fetch("{% url 'api_update_waktu' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({}) 
+                }).catch(err => console.log("Gagal update waktu:", err));
+            }
+
+            // Jalankan setiap 60.000 ms (1 menit)
+            setInterval(kirimHeartbeat, 60000);
+        });
+        {% endif %}
+    </script>
 
 </body>
 </html>

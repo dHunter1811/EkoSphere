@@ -70,4 +70,7 @@ urlpatterns = [
     
     # 2. URL API baru untuk menyimpan poin dari game (Klasifikasi & Energy Flow)
     path('api/arena/simpan-poin/', views.api_simpan_poin_view, name='api_simpan_poin'),
+
+    # --- TAMBAHKAN INI ---
+    path('api/update-waktu/', views.api_update_waktu_view, name='api_update_waktu'),
 ]
