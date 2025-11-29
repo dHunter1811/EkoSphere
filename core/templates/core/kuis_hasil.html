@@ -116,7 +116,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- 1. LOGIKA AUDIO ---
+    // --- 1. LOGIKA AUDIO & CONFETTI ---
     const hasNewBadge = {{ lencana_baru|yesno:"true,false" }};
     const score = {{ skor|default:0 }};
     const kkm = 75; 
@@ -131,14 +131,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Fungsi Confetti
+    function tembakConfetti() {
+        var duration = 3 * 1000; // Durasi 3 detik
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            var particleCount = 50 * (timeLeft / duration);
+            // Tembak dari pojok kiri dan kanan bawah
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+
     if (hasNewBadge) {
+        // Jika dapat lencana: Suara Achievement + Confetti
         playAudio('sfx-badge');
+        tembakConfetti();
     } else if (score >= kkm) {
+        // Jika lulus: Suara Sukses + Confetti
         playAudio('sfx-success');
+        tembakConfetti();
     } else {
+        // Jika gagal: Suara Gagal saja
         playAudio('sfx-fail');
     }
-    // --- AKHIR LOGIKA AUDIO ---
+    // --- AKHIR LOGIKA ---
 
     // --- 2. LOGIKA ACCORDION (AUTO-OPEN WRONG ANSWER) ---
     const accordion = document.getElementById('reviewAccordion');
@@ -158,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetCollapse.classList.add('show');
             }
         } else {
+            // Jika benar semua, buka yang pertama saja
             const firstButton = accordion.querySelector('.accordion-button');
             const firstCollapse = accordion.querySelector('.accordion-collapse');
             if(firstButton) {
