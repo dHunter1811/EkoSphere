@@ -134,7 +134,7 @@
             </a>
             {% if materi_asal_pk %}
             <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-success">
-                <i class="bi bi-book-half me-1"></i> Kembali ke Materi
+                <i class="bi bi-book-half me-1"></i> Materi Klasifikasi
             </a>
             {% endif %}
         </div>
@@ -148,7 +148,9 @@
                      <div class="arena-illustration" id="game-illustration"></div>
                 </div>
                 
-                <div class="col-md-7 col-12 arena-container p-0"> <div class="game-card-header w-100 d-flex justify-content-between align-items-center">
+                <div class="col-md-7 col-12 arena-container p-0"> 
+                    
+                    <div class="game-card-header w-100 d-flex justify-content-between align-items-center">
                         <h3 class="mb-0 fw-bold" id="game-title">Uji Pemahaman</h3>
                         <button class="btn btn-light btn-sm text-success fw-bold" id="back-to-menu-header-btn">
                             <i class="bi bi-list-ul"></i> Menu Level
@@ -205,6 +207,8 @@
     </div>
 </div>
 
+<audio id="sfx-correct" src="{% static 'sounds/correct.mp3' %}" preload="auto"></audio>
+<audio id="sfx-wrong" src="{% static 'sounds/wrong.mp3' %}" preload="auto"></audio>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -226,6 +230,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const illustrationEl = document.getElementById('game-illustration');
     const backToMenuHeaderBtn = document.getElementById('back-to-menu-header-btn');
 
+    // --- FUNGSI HELPER SUARA ---
+    function playSfx(type) {
+        const audio = document.getElementById(type === 'correct' ? 'sfx-correct' : 'sfx-wrong');
+        if (audio) {
+            audio.currentTime = 0; 
+            audio.volume = 0.6;    
+            audio.play().catch(e => console.log("Audio error:", e));
+        }
+    }
+
     function showLevelSelectScreen() {
         gameScreen.classList.remove('show');
         levelSelectScreen.classList.remove('hide');
@@ -241,17 +255,13 @@ document.addEventListener('DOMContentLoaded', function () {
         
         gameTitle.innerText = `Level ${data.level}`;
         
-        // --- UPDATE GAMBAR ILUSTRASI ---
         if (illustrationEl) {
             illustrationEl.style.backgroundImage = `url('${data.image_url}')`;
         }
         
         itemsContainer.innerHTML = '';
         
-        // Bersihkan drop zones (reset ke H5 dan Small text)
         dropZones.forEach(zone => {
-            // Kita asumsikan 2 elemen pertama adalah judul (H5) dan subjudul (SMALL)
-            // Hapus elemen setelah indeks 1
             while (zone.children.length > 2) { 
                 zone.removeChild(zone.lastChild);
             }
@@ -261,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
         resultContainer.className = 'mt-3 fw-bold fs-5';
         resultContainer.innerHTML = '';
         checkButton.disabled = false;
-        checkButton.classList.remove('d-none'); // Pastikan tombol cek muncul
+        checkButton.classList.remove('d-none'); 
         gameNavButtons.classList.add('d-none');
 
         data.items.forEach(itemData => {
@@ -332,26 +342,32 @@ document.addEventListener('DOMContentLoaded', function () {
             itemsInZone.forEach(item => {
                 totalItemDiDropZone++;
                 if (item.dataset.type === zone.id) {
-                    item.style.backgroundColor = '#d1e7dd'; // Hijau sukses
+                    item.style.backgroundColor = '#d1e7dd'; 
                     totalBenar++;
                 } else {
-                    item.style.backgroundColor = '#f8d7da'; // Merah error
+                    item.style.backgroundColor = '#f8d7da'; 
                 }
                 item.draggable = false;
                 item.style.cursor = 'default';
             });
         });
 
-        checkButton.classList.add('d-none'); // Sembunyikan tombol cek
-        gameNavButtons.classList.remove('d-none'); // Tampilkan tombol navigasi
+        checkButton.classList.add('d-none'); 
+        gameNavButtons.classList.remove('d-none'); 
         
         let isCorrect = (totalBenar === totalItemAsli);
 
         if (isCorrect) {
+            // --- SUARA BENAR ---
+            playSfx('correct');
+            
             resultContainer.className = 'alert alert-success mt-3';
             resultContainer.innerHTML = `Hebat! Semua jawabanmu benar! <strong>+${totalBenar * 5} Poin</strong>`;
             nextLevelBtn.classList.remove('d-none');
         } else {
+            // --- SUARA SALAH ---
+            playSfx('wrong');
+            
             resultContainer.className = 'alert alert-danger mt-3';
             resultContainer.innerHTML = `Oops! Kamu benar ${totalBenar} dari ${totalItemAsli} item. Coba lagi nanti.`;
             nextLevelBtn.classList.add('d-none');

@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container text-dark mt-4">
@@ -25,6 +26,7 @@
                         <i class="bi bi-arrow-left"></i> Kembali ke Materi
                     </a>
                     {% endif %}
+                    
                     <a href="{% url 'dashboard' %}" class="btn btn-primary">
                         <i class="bi bi-house-door-fill"></i> Kembali ke Dashboard
                     </a>
@@ -108,8 +110,37 @@
     </div>
 </div>
 
+<audio id="sfx-badge" src="{% static 'sounds/achievement.mp3' %}" preload="auto"></audio>
+<audio id="sfx-success" src="{% static 'sounds/success.mp3' %}" preload="auto"></audio>
+<audio id="sfx-fail" src="{% static 'sounds/fail.mp3' %}" preload="auto"></audio>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
+    // --- 1. LOGIKA AUDIO ---
+    const hasNewBadge = {{ lencana_baru|yesno:"true,false" }};
+    const score = {{ skor|default:0 }};
+    const kkm = 75; 
+    
+    function playAudio(id) {
+        const audio = document.getElementById(id);
+        if (audio) {
+            audio.volume = 0.5; 
+            audio.play().catch(error => {
+                console.log("Autoplay dicegah oleh browser:", error);
+            });
+        }
+    }
+
+    if (hasNewBadge) {
+        playAudio('sfx-badge');
+    } else if (score >= kkm) {
+        playAudio('sfx-success');
+    } else {
+        playAudio('sfx-fail');
+    }
+    // --- AKHIR LOGIKA AUDIO ---
+
+    // --- 2. LOGIKA ACCORDION (AUTO-OPEN WRONG ANSWER) ---
     const accordion = document.getElementById('reviewAccordion');
     if (accordion) {
         const firstWrongAnswerButton = accordion.querySelector('.accordion-button.collapsed');

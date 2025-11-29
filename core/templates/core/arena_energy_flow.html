@@ -7,7 +7,7 @@
     body { display: block !important; height: auto !important; min-height: 0 !important; }
     main.container { flex-grow: 0 !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
-    /* CSS Menu Level - NUANSA BIRU (CYAN) */
+    /* ... (CSS Level Select sama) ... */
     #level-select-screen {
         background-color: #fff; border-radius: 15px;
         box-shadow: 0 5px 20px rgba(0,0,0,0.05);
@@ -18,10 +18,9 @@
         gap: 1rem;
     }
     .level-box {
-        /* Biru Muda (Cyan-ish) */
         background-color: #cff4fc; 
         border: 2px solid #9eeaf9;
-        color: #055160; /* Teks Biru Tua */
+        color: #055160;
         
         border-radius: 10px; padding: 1.5rem; font-size: 1.5rem;
         font-weight: bold; text-align: center; cursor: pointer;
@@ -34,7 +33,7 @@
     }
     .level-box i {
         display: block; font-size: 2rem;
-        margin-bottom: 0.5rem; color: #0dcaf0; /* Ikon Biru */
+        margin-bottom: 0.5rem; color: #0dcaf0;
     }
     
     /* Tampilan Layar Game */
@@ -105,7 +104,7 @@
             
             {% if materi_asal_pk %}
             <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-info">
-                <i class="bi bi-book-half me-1"></i> Kembali ke Materi
+                <i class="bi bi-book-half me-1"></i> Materi Energi
             </a>
             {% endif %}
         </div>
@@ -169,6 +168,8 @@
     </div>
 </div>
 
+<audio id="sfx-correct" src="{% static 'sounds/correct.mp3' %}" preload="auto"></audio>
+<audio id="sfx-wrong" src="{% static 'sounds/wrong.mp3' %}" preload="auto"></audio>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -202,6 +203,16 @@ document.addEventListener('DOMContentLoaded', function () {
         "Ketuk organisme yang memakan Konsumen II (Konsumen III).",
         "Ketuk organisme yang memakan Konsumen III (Konsumen IV)."
     ];
+
+    // --- FUNGSI HELPER SUARA ---
+    function playSfx(type) {
+        const audio = document.getElementById(type === 'correct' ? 'sfx-correct' : 'sfx-wrong');
+        if (audio) {
+            audio.currentTime = 0; 
+            audio.volume = 0.6;    
+            audio.play().catch(e => console.log("Audio error:", e));
+        }
+    }
 
     // --- FUNGSI UTAMA ---
 
@@ -282,6 +293,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (isCorrect) {
+            // SUARA BENAR
+            playSfx('correct');
+
             // Jawaban benar
             currentChain.push(organism);
             currentStep++;
@@ -312,6 +326,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 displayStep();
             }
         } else {
+            // SUARA SALAH
+            playSfx('wrong');
+            
             // Jawaban salah
             alert('Pilihan kurang tepat, coba lagi!');
         }

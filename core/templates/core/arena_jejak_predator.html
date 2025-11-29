@@ -15,9 +15,11 @@
         display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;
     }
     .level-box {
+        /* Merah Muda */
         background-color: #f8d7da; 
         border: 2px solid #f5c6cb;
-        color: #842029;
+        color: #842029; /* Teks Merah Gelap */
+        
         border-radius: 10px; padding: 1.5rem;
         font-size: 1.2rem; font-weight: bold; text-align: center; cursor: pointer;
         transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center;
@@ -30,7 +32,7 @@
     .level-box i { 
         font-size: 2rem; 
         margin-bottom: 0.5rem; 
-        color: #dc3545;
+        color: #dc3545; /* Ikon Merah */
     }
 
     /* CSS Game Screen */
@@ -49,8 +51,9 @@
     }
     .game-card { width: 100%; }
     
+    /* Header Merah */
     .game-card .card-header { 
-        background-color: #dc3545;
+        background-color: #dc3545; /* Merah Danger */
         color: #fff; 
         border: none; padding: 1rem 1.5rem; 
     }
@@ -62,7 +65,7 @@
     }
     .answer-btn:hover { 
         background-color: #f8f9fa; 
-        border-color: #dc3545;
+        border-color: #dc3545; /* Border merah saat hover */
     }
     .answer-btn.btn-success { background-color: #198754 !important; border-color: #198754 !important; color: white !important; }
     .answer-btn.btn-danger { background-color: #dc3545 !important; border-color: #dc3545 !important; color: white !important; }
@@ -85,14 +88,18 @@
             </div>
         
         <div class="text-center mt-5 d-flex justify-content-center gap-2">
-            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-house-door-fill me-1"></i> Dashboard
-            </a>
-
-            {% if materi_asal_pk %}
-            <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-danger">
-                <i class="bi bi-book-half me-1"></i> Kembali ke Materi
-            </a>
+            {% if sumber_akses == 'dashboard' %}
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-house-door-fill me-1"></i> Dashboard
+                </a>
+            {% elif materi_asal_pk %}
+                <a href="{% url 'subtopik_detail' pk=materi_asal_pk %}" class="btn btn-outline-danger">
+                    <i class="bi bi-book-half me-1"></i> Kembali ke Materi
+                </a>
+            {% else %}
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                </a>
             {% endif %}
         </div>
     </div>
@@ -135,7 +142,6 @@
                                 <h3 class="fw-bold">Misteri Terpecahkan!</h3>
                                 <p class="fs-4">Skor Kasus Ini:</p>
                                 <p id="skor-akhir" class="display-3 fw-bold text-danger"></p>
-                                
                                 <div class="d-grid gap-2 d-md-block mt-4">
                                     <button id="back-to-menu-btn" class="btn btn-secondary">Pilih Kasus Lain</button>
                                 </div>
@@ -150,7 +156,6 @@
                                     </a>
                                     {% endif %}
                                 </div>
-
                             </div>
 
                         </div>
@@ -172,6 +177,9 @@
         </div>
     </div>
 </div>
+
+<audio id="sfx-correct" src="{% static 'sounds/correct.mp3' %}" preload="auto"></audio>
+<audio id="sfx-wrong" src="{% static 'sounds/wrong.mp3' %}" preload="auto"></audio>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -205,6 +213,16 @@
         const progressBar = document.getElementById('progress-bar');
         const poinDisplay = document.getElementById('poin-display');
 
+        // --- FUNGSI HELPER SUARA ---
+        function playSfx(type) {
+            const audio = document.getElementById(type === 'correct' ? 'sfx-correct' : 'sfx-wrong');
+            if (audio) {
+                audio.currentTime = 0; 
+                audio.volume = 0.6;    
+                audio.play().catch(e => console.log("Audio error:", e));
+            }
+        }
+
         // --- 1. Inisialisasi Menu Level ---
         function buildLevelGrid() {
             levelGridContainer.innerHTML = '';
@@ -233,9 +251,11 @@
             gameContent.classList.remove('d-none');
             hasilContainer.classList.add('d-none');
             
-            // Set Background Awal (jika ada di level)
-            // Nantinya akan ditimpa oleh loadStep
+            // Set Background
             const levelData = gameData[currentLevelIndex];
+            if (illustrationEl) {
+                illustrationEl.style.backgroundImage = `url('${levelData.image_url}')`;
+            }
             storyTitle.innerText = levelData.title;
 
             loadStep();
@@ -296,10 +316,16 @@
             allBtn.forEach(b => b.disabled = true);
 
             if (chosenAnswer === correctAnswer) {
+                // SUARA BENAR
+                playSfx('correct');
+
                 btnKlik.classList.add('btn-success');
                 levelScore += 25; // Poin besar untuk misteri
                 kirimPoinKeServer(25);
             } else {
+                // SUARA SALAH
+                playSfx('wrong');
+
                 btnKlik.classList.add('btn-danger');
                 allBtn.forEach(b => {
                     if (b.innerText === correctAnswer) b.classList.add('btn-success');
