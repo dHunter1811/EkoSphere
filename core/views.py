@@ -1118,3 +1118,42 @@ def api_update_waktu_view(request):
         except ProfilSiswa.DoesNotExist:
             return JsonResponse({"status": "gagal"}, status=404)
     return JsonResponse({"status": "diabaikan"})
+
+def referensi_view(request):
+    semua_buku = [
+        {
+            "judul": "Biologi untuk SMA/MA Kelas X",
+            "kategori": "Buku Paket IPA",
+            "penulis": "Irnaningtyas",
+            "tahun": "2016",
+            "penerbit": "Erlangga",
+            "deskripsi": "Buku teks utama yang membahas dasar-dasar ekosistem, komponen biotik, dan abiotik secara umum.",
+            "image_filename": "cover_ipa.png", 
+            "pdf_filename": "buku_ipa.pdf" 
+        },
+        {
+            "judul": "Ekologi Lahan Basah Kalimantan",
+            "kategori": "Referensi Lahan Basah",
+            "penulis": "Pusat Studi Lingkungan ULM",
+            "tahun": "2020",
+            "penerbit": "Lambung Mangkurat Press",
+            "deskripsi": "Panduan lengkap mengenai flora dan fauna endemik di rawa gambut Kalimantan Selatan.",
+            "image_filename": "cover_lahan_basah.png",
+            "pdf_filename": "buku_lahan_basah.pdf"
+        },
+        {
+            "judul": "Modul Ajar EkoSphere",
+            "kategori": "Modul Pembelajaran",
+            "penulis": "Tim Pengembang",
+            "tahun": "2025",
+            "penerbit": "FKIP ULM",
+            "deskripsi": "Modul interaktif khusus yang dirancang untuk menemani pembelajaran di website EkoSphere.",
+            "image_filename": "cover_modul.png",
+            "pdf_filename": "modul_ekosphere.pdf"
+        }
+    ]
+
+    context = {
+        "semua_buku": semua_buku,
+    }
+    return render(request, 'core/referensi.html', context)

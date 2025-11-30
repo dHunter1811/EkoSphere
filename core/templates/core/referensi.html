@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* CSS Kustom untuk Buku */
+    .book-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background-color: #fff;
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .book-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+    }
+    .book-cover-container {
+        height: 320px; 
+        overflow: hidden;
+        position: relative;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+    }
+    .book-cover {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        transition: transform 0.5s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .book-card:hover .book-cover {
+        transform: scale(1.05);
+    }
+    .badge-category {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 2; 
+    }
+    .book-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-dark display-5">Pustaka EkoSphere</h1>
+        <p class="text-muted fs-5">Sumber referensi dan bahan ajar untuk mendukung pembelajaranmu.</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
+        {% for buku in semua_buku %}
+        <div class="col">
+            <div class="card shadow-sm book-card">
+                
+                <div class="book-cover-container">
+                    <span class="badge bg-warning text-dark badge-category border border-white">
+                        {{ buku.kategori }}
+                    </span>
+                    
+                    <img src="{% static 'images/books/'|add:buku.image_filename %}" class="book-cover" alt="{{ buku.judul }}">
+                </div>
+
+                <div class="card-body d-flex flex-column p-4">
+                    <h5 class="card-title fw-bold text-dark mb-2" style="font-size: 1.2rem; min-height: 3.6rem;">{{ buku.judul }}</h5>
+                    
+                    <div class="book-meta mb-3">
+                        <div class="mb-1"><i class="bi bi-person-fill me-2 text-primary"></i> {{ buku.penulis }}</div>
+                        <div><i class="bi bi-building me-2 text-secondary"></i> {{ buku.penerbit }} ({{ buku.tahun }})</div>
+                    </div>
+                    
+                    <p class="card-text text-muted small flex-grow-1" style="line-height: 1.6;">
+                        {{ buku.deskripsi }}
+                    </p>
+                    
+                    <div class="mt-3 pt-3 border-top">
+                        <a href="{% static 'books/'|add:buku.pdf_filename %}" target="_blank" class="btn btn-success w-100 rounded-pill fw-bold">
+                            <i class="bi bi-book-fill me-2"></i> Baca Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-5 pt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4 btn-lg">
+            <i class="bi bi-arrow-left me-2"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
+</div>
+{% endblock %}

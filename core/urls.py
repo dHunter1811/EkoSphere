@@ -73,4 +73,6 @@ urlpatterns = [
 
     # --- TAMBAHKAN INI ---
     path('api/update-waktu/', views.api_update_waktu_view, name='api_update_waktu'),
+
+    path('referensi/', views.referensi_view, name='referensi'),
 ]
