@@ -25,22 +25,54 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         height: 100%;
         border: none;
+        position: relative;
+        overflow: hidden; /* Pastikan isi tidak keluar radius */
+        border-radius: 10px; /* Konsisten dengan gambar */
     }
     .arena-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
     }
     .arena-card-img {
-        height: 100px; /* Sedikit dikecilkan agar muat di sidebar */
+        height: 120px; /* Sesuaikan tinggi gambar agar proporsional */
+        width: 100%;
         object-fit: cover;
         border-radius: 10px 10px 0 0;
+    }
+    
+    /* Gaya Kartu Terkunci (DIPERBAIKI) */
+    .arena-card.locked {
+        opacity: 0.9; /* Sedikit transparan tapi gambar tetap jelas */
+    }
+    .arena-card.locked:hover {
+        transform: none;
+        box-shadow: none !important;
+        cursor: not-allowed;
+    }
+    
+    /* Overlay Gembok (DIPERBAIKI) */
+    .lock-overlay {
+        position: absolute;
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 120px; /* Samakan dengan tinggi .arena-card-img */
+        background: rgba(0, 0, 0, 0.4); /* Hitam transparan */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px 10px 0 0;
+        color: white;
+        font-size: 2.5rem;
+        z-index: 10;
+        backdrop-filter: blur(2px); /* Efek blur sedikit pada gambar di belakang gembok */
     }
 </style>
 
 <div class="p-4 mb-4 bg-white rounded-3 shadow-sm text-dark">
     <div class="row align-items-center">
         <div class="col-md-7">
-            <h1 class="display-5 fw-bold mb-3">Selamat Datang di EkoSphere!</h1>
+            <h1 class="display-6 fw-bold mb-3">Selamat Datang di EkoSphere!</h1>
             <p class="fs-4 text-muted">Media Pembelajaran Interaktif untuk Ekosistem Lahan Basah.</p>
         </div>
         <div class="col-md-5 text-center text-md-end mt-3 mt-md-0">
@@ -158,76 +190,115 @@
             <div class="row row-cols-2 row-cols-xl-4 g-3">
                 
                 <div class="col">
-                    <div class="card shadow-sm arena-card h-100">
-                        <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
-                        <div class="card-body p-3 d-flex flex-column">
-                            <h6 class="card-title fw-bold text-success small mb-1">Klasifikasi</h6>
-                            <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Biotik vs Abiotik.</p>
-                            <a href="{% url 'klasifikasi_arena' %}" class="btn btn-sm btn-success w-100 rounded-pill py-0">Main</a>
+                    {% if arena_status.klasifikasi.locked %}
+                        <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.klasifikasi.materi_judul }}', '{{ arena_status.klasifikasi.materi_pk }}')">
+                            <div class="position-relative">
+                                <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
+                                <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
+                            </div>
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-muted small mb-1">Klasifikasi</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Selesaikan Materi 1.1</p>
+                                <button class="btn btn-sm btn-secondary w-100 rounded-pill py-0">Terkunci</button>
+                            </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <div class="card shadow-sm arena-card h-100">
+                            <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-success small mb-1">Klasifikasi</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Biotik vs Abiotik.</p>
+                                <a href="{% url 'klasifikasi_arena' %}" class="btn btn-sm btn-success w-100 rounded-pill py-0">Main</a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="col">
-                    <div class="card shadow-sm arena-card h-100">
-                        <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
-                        <div class="card-body p-3 d-flex flex-column">
-                            <h6 class="card-title fw-bold text-warning small mb-1">Simbiosis</h6>
-                            <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Tebak hubungan.</p>
-                            <a href="{% url 'duel_simbiosis' %}?dari=dashboard" class="btn btn-sm btn-warning w-100 rounded-pill py-0 text-dark">Main</a>
+                    {% if arena_status.interaksi.locked %}
+                        <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.interaksi.materi_judul }}', '{{ arena_status.interaksi.materi_pk }}')">
+                            <div class="position-relative">
+                                <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
+                                <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
+                            </div>
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-muted small mb-1">Simbiosis</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Selesaikan Materi 1.2</p>
+                                <button class="btn btn-sm btn-secondary w-100 rounded-pill py-0">Terkunci</button>
+                            </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <div class="card shadow-sm arena-card h-100">
+                            <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-warning small mb-1">Simbiosis</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Tebak hubungan.</p>
+                                <a href="{% url 'duel_simbiosis' %}?dari=dashboard" class="btn btn-sm btn-warning w-100 rounded-pill py-0 text-dark">Main</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                 <div class="col">
+                    {% if arena_status.interaksi.locked %}
+                        <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.interaksi.materi_judul }}', '{{ arena_status.interaksi.materi_pk }}')">
+                            <div class="position-relative">
+                                <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
+                                <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
+                            </div>
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-muted small mb-1">Predator</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Selesaikan Materi 1.2</p>
+                                <button class="btn btn-sm btn-secondary w-100 rounded-pill py-0">Terkunci</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card shadow-sm arena-card h-100">
+                            <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-danger small mb-1">Predator</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Pecahkan kasus.</p>
+                                <a href="{% url 'jejak_predator' %}" class="btn btn-sm btn-danger w-100 rounded-pill py-0">Main</a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="col">
-                    <div class="card shadow-sm arena-card h-100">
-                        <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
-                        <div class="card-body p-3 d-flex flex-column">
-                            <h6 class="card-title fw-bold text-info small mb-1">Energy Flow</h6>
-                            <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Rantai makanan.</p>
-                            <a href="{% url 'energy_flow_arena' %}" class="btn btn-sm btn-info w-100 rounded-pill py-0 text-white">Main</a>
+                    {% if arena_status.energi.locked %}
+                        <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.energi.materi_judul }}', '{{ arena_status.energi.materi_pk }}')">
+                            <div class="position-relative">
+                                <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
+                                <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
+                            </div>
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-muted small mb-1">Energy Flow</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Selesaikan Materi 1.3</p>
+                                <button class="btn btn-sm btn-secondary w-100 rounded-pill py-0">Terkunci</button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div class="card shadow-sm arena-card h-100">
-                        <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
-                        <div class="card-body p-3 d-flex flex-column">
-                            <h6 class="card-title fw-bold text-danger small mb-1">Predator</h6>
-                            <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Pecahkan kasus.</p>
-                            <a href="{% url 'jejak_predator' %}" class="btn btn-sm btn-danger w-100 rounded-pill py-0">Main</a>
+                    {% else %}
+                        <div class="card shadow-sm arena-card h-100">
+                            <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <h6 class="card-title fw-bold text-info small mb-1">Energy Flow</h6>
+                                <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Rantai makanan.</p>
+                                <a href="{% url 'energy_flow_arena' %}" class="btn btn-sm btn-info w-100 rounded-pill py-0 text-white">Main</a>
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
 
             </div>
         </div>
-        {% if fakta_random %}
-        <div class="card shadow-sm mb-4 overflow-hidden border-0">
-            <div class="row g-0">
-                <div class="col-md-4">
-                    <img src="{{ fakta_random.gambar_url }}" class="img-fluid h-100 w-100" alt="{{ fakta_random.nama }}" style="object-fit: cover; min-height: 150px;">
-                </div>
-                <div class="col-md-8 d-flex align-items-center">
-                    <div class="card-body p-4">
-                        <h5 class="card-title text-warning fw-bold"><i class="bi bi-lightbulb-fill me-2"></i> Tahukah Kamu?</h5>
-                        <h6 class="fw-bold text-dark">{{ fakta_random.nama }}</h6>
-                        <p class="card-text text-muted mb-2">{{ fakta_random.deskripsi_singkat }}</p>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success">{{ fakta_random.kategori }}</span>
-                    </div>
-                </div>
-            </div>
         </div>
-        {% endif %}
-    </div>
     
     <div class="col-lg-5 mb-4 d-flex flex-column">
         
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-trophy-fill me-2"></i>Papan Peringkat</h5>
-                <a href="{% url 'leaderboard' %}" class="btn btn-sm btn-dark">Lihat Semua</a>
+                <h5 class="mb-0 fw-bold"><i class="bi bi-trophy-fill me-2"></i>Papan Peringkat Teratas</h5>
+                <a href="{% url 'leaderboard' %}" class="btn btn-sm btn-dark">Lihat Semua <i class="bi bi-arrow-right-short"></i></a>
             </div>
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush rounded-bottom">
@@ -236,15 +307,17 @@
                         style="{% if forloop.counter <= 3 %}background-color: #fffbf0;{% endif %}">
                         <div class="d-flex align-items-center">
                             {% if forloop.counter == 1 %}
-                                <img src="{% static 'images/badges/gold_badge.png' %}" alt="Emas" style="width: 24px; height: 24px; object-fit: contain;" class="me-2">
+                                <img src="{% static 'images/badges/gold_badge.png' %}" alt="Emas" style="width: 32px; height: 32px; object-fit: contain;" class="me-3">
                             {% elif forloop.counter == 2 %}
-                                <img src="{% static 'images/badges/silver_badge.png' %}" alt="Perak" style="width: 24px; height: 24px; object-fit: contain;" class="me-2">
+                                <img src="{% static 'images/badges/silver_badge.png' %}" alt="Perak" style="width: 32px; height: 32px; object-fit: contain;" class="me-3">
                             {% elif forloop.counter == 3 %}
-                                <img src="{% static 'images/badges/bronze_badge.png' %}" alt="Perunggu" style="width: 24px; height: 24px; object-fit: contain;" class="me-2">
+                                <img src="{% static 'images/badges/bronze_badge.png' %}" alt="Perunggu" style="width: 32px; height: 32px; object-fit: contain;" class="me-3">
                             {% endif %}
-                            <span class="fw-bold text-truncate" style="max-width: 100px;">{{ profil.user.username }}</span>
+                            <span class="fw-bold fs-5">{{ profil.user.username }}</span>
                         </div>
-                        <span class="badge rounded-pill px-2 bg-success">{{ profil.total_poin }}</span>
+                        <span class="badge rounded-pill px-3 py-2 fs-6 {% if forloop.counter <= 3 %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ profil.total_poin }} Poin
+                        </span>
                     </li>
                     {% empty %}
                     <li class="list-group-item text-center text-muted py-4">Belum ada data peringkat.</li>
@@ -281,30 +354,38 @@
             </div>
         </div>
 
-        <div class="card shadow-sm flex-grow-1">
-            <div class="card-header d-flex justify-content-between align-items-center bg-white py-2">
-                <ul class="nav nav-tabs card-header-tabs m-0" id="progressTab" role="tablist">
-                    <li class="nav-item"><button class="nav-link active small py-1" id="lencana-tab" data-bs-toggle="tab" data-bs-target="#lencana">Lencana</button></li>
-                    <li class="nav-item"><button class="nav-link small py-1" id="riwayat-tab" data-bs-toggle="tab" data-bs-target="#riwayat">Riwayat</button></li>
+        <div class="card shadow-sm flex-grow-1 border-0">
+            <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                <ul class="nav nav-pills card-header-pills" id="progressTab" role="tablist">
+                    <li class="nav-item me-1">
+                        <button class="nav-link active btn-sm py-1 px-3 fw-bold rounded-pill" id="lencana-tab" data-bs-toggle="tab" data-bs-target="#lencana" type="button" role="tab" style="font-size: 0.85rem;">
+                            <i class="bi bi-award-fill me-1"></i> Lencana
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn-sm py-1 px-3 fw-bold rounded-pill" id="riwayat-tab" data-bs-toggle="tab" data-bs-target="#riwayat" type="button" role="tab" style="font-size: 0.85rem;">
+                            <i class="bi bi-clock-history me-1"></i> Riwayat
+                        </button>
+                    </li>
                 </ul>
                 <a href="{% url 'progres' %}" class="text-decoration-none small fw-bold">Detail ></a>
             </div>
             <div class="card-body p-0">
                 <div class="tab-content" id="progressTabContent">
-                    
                     <div class="tab-pane fade show active" id="lencana" role="tabpanel">
                         <ul class="list-group list-group-flush">
                             {% for lencana in profil_siswa.lencana.all %}
                             <li class="list-group-item d-flex align-items-center border-0 py-2">
-                                <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="64" class="me-2">
-                                <span class="small fw-bold">{{ lencana.nama }}</span>
+                                <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="50" class="me-3">
+                                <span class="small">
+                                    <strong>{{ lencana.nama }}</strong>
+                                </span>
                             </li>
                             {% empty %}
-                            <li class="list-group-item text-muted text-center py-3 small">Belum ada lencana.</li>
+                            <li class="list-group-item text-muted text-center py-4 small">Belum ada lencana.</li>
                             {% endfor %}
                         </ul>
                     </div>
-
                     <div class="tab-pane fade" id="riwayat" role="tabpanel">
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0 align-middle">
@@ -329,4 +410,18 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Fungsi untuk menangani klik pada arena terkunci
+    function aksesTerkunci(judulMateri, pkMateri) {
+        if (confirm(`Arena ini terkunci. Anda harus menyelesaikan materi "${judulMateri}" terlebih dahulu. Apakah Anda ingin menuju materi tersebut sekarang?`)) {
+            if (pkMateri && pkMateri !== 'None') {
+                window.location.href = `/materi/${pkMateri}/`;
+            } else {
+                alert("Maaf, materi belum tersedia.");
+            }
+        }
+    }
+</script>
+
 {% endblock %}

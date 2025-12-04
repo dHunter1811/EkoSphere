@@ -40,7 +40,8 @@ def is_siswa(user):
     return user.is_authenticated and user.role == "Siswa"
 
 
-# --- 1. FUNGSI DASHBOARD DENGAN LOGIKA KKM ---
+# Di dalam core/views.py
+
 @login_required
 def dashboard_view(request):
 
@@ -53,50 +54,62 @@ def dashboard_view(request):
         
         semua_subtopik = SubTopik.objects.all().order_by('topik__urutan', 'urutan')
         
-        # 1. Materi yang sudah "Dibaca" (Tandai Selesai)
-        read_materi_ids = set(
+        # 1. Materi yang sudah selesai (Completed IDs)
+        # Kita asumsikan 'Selesai' berarti sudah ditandai selesai (UserMateriProgress)
+        # Jika Anda ingin syaratnya LULUS KUIS, ganti logikanya seperti subtopik_detail_view
+        completed_materi_ids = set(
             UserMateriProgress.objects.filter(user=request.user).values_list('materi_id', flat=True)
         )
         
-        # 2. Materi yang "Lulus Kuis" (Skor >= 75)
-        # Kita ambil ID SubTopik yang kuisnya sudah lulus
-        passed_quiz_subtopik_ids = set(
-            HasilKuis.objects.filter(
-                siswa=request.user, 
-                skor__gte=75
-            ).values_list('kuis__subtopik_id', flat=True)
-        )
+        # --- LOGIKA PENGUNCIAN ARENA ---
+        # Kita cari ID materi prasyarat
+        materi1_1 = semua_subtopik.filter(judul__icontains="1.1").first()
+        materi1_2 = semua_subtopik.filter(judul__icontains="1.2").first()
+        materi1_3 = semua_subtopik.filter(judul__icontains="1.3").first()
+        
+        arena_status = {
+            "klasifikasi": {
+                "locked": materi1_1.id not in completed_materi_ids if materi1_1 else True,
+                "materi_pk": materi1_1.pk if materi1_1 else None,
+                "materi_judul": materi1_1.judul if materi1_1 else "Materi 1.1"
+            },
+            "interaksi": { # Untuk Simbiosis & Predator
+                "locked": materi1_2.id not in completed_materi_ids if materi1_2 else True,
+                "materi_pk": materi1_2.pk if materi1_2 else None,
+                "materi_judul": materi1_2.judul if materi1_2 else "Materi 1.2"
+            },
+            "energi": { # Untuk Energy Flow
+                "locked": materi1_3.id not in completed_materi_ids if materi1_3 else True,
+                "materi_pk": materi1_3.pk if materi1_3 else None,
+                "materi_judul": materi1_3.judul if materi1_3 else "Materi 1.3"
+            }
+        }
+        # -------------------------------
 
-        # 3. Tentukan "Posisi Saat Ini" (First Unlocked)
-        # Logika: Materi terkunci jika materi SEBELUMNYA belum (Dibaca AND Lulus)
+        # ... (Logika First Unlocked & Lencana TETAP SAMA) ...
+        read_materi_ids = set(UserMateriProgress.objects.filter(user=request.user).values_list('materi_id', flat=True))
+        passed_quiz_subtopik_ids = set(HasilKuis.objects.filter(siswa=request.user, skor__gte=75).values_list('kuis__subtopik_id', flat=True))
+        
         first_unlocked_pk = None
-        completed_materi_ids = set() # Ini untuk visualisasi centang hijau
+        completed_materi_ids_display = set() # Untuk centang hijau di peta
 
         for subtopik in semua_subtopik:
-            # Cek apakah materi ini sudah selesai sepenuhnya (Baca + Lulus)
             is_read = subtopik.id in read_materi_ids
-            
-            # Cek status lulus kuis (jika ada kuis)
             has_quiz = hasattr(subtopik, 'kuis')
-            is_passed = subtopik.id in passed_quiz_subtopik_ids if has_quiz else True # Kalau gak ada kuis, dianggap lulus
+            is_passed = subtopik.id in passed_quiz_subtopik_ids if has_quiz else True
             
             if is_read and is_passed:
-                completed_materi_ids.add(subtopik.id)
+                completed_materi_ids_display.add(subtopik.id)
             else:
-                # Jika belum selesai (entah belum baca atau belum lulus),
-                # maka ini adalah materi aktif saat ini.
-                # Materi setelah ini akan otomatis terkunci oleh loop.
                 first_unlocked_pk = subtopik.pk
                 break
         
-        # Jika semua selesai
         if first_unlocked_pk is None and semua_subtopik.exists():
             first_unlocked_pk = semua_subtopik.last().pk
             
         total_materi_count = semua_subtopik.count()
-        semua_materi_selesai = (len(completed_materi_ids) == total_materi_count)
+        semua_materi_selesai = (len(completed_materi_ids_display) == total_materi_count)
 
-        # ... (Logika lencana, info_items, dll TETAP SAMA) ...
         lencana_selanjutnya = (
             Lencana.objects.exclude(id__in=profil_siswa.lencana.all())
             .order_by("syarat_poin")
@@ -117,10 +130,13 @@ def dashboard_view(request):
             "progres_persen": progres_persen,
             "info_items": info_items,
             "daftar_materi": semua_subtopik, 
-            "completed_materi_ids": completed_materi_ids,
+            "completed_materi_ids": completed_materi_ids_display,
             "first_unlocked_pk": first_unlocked_pk,
             "semua_materi_selesai": semua_materi_selesai,
             "siswa_teratas": siswa_teratas,
+            
+            # Data Kunci Arena
+            "arena_status": arena_status, 
         }
         return render(request, "core/dashboard.html", context)
 
@@ -1122,21 +1138,21 @@ def api_update_waktu_view(request):
 def referensi_view(request):
     semua_buku = [
         {
-            "judul": "Biologi untuk SMA/MA Kelas X",
+            "judul": "Ilmu Pengetahuan Alam untuk SMA/MA Kelas X",
             "kategori": "Buku Paket IPA",
-            "penulis": "Irnaningtyas",
-            "tahun": "2016",
-            "penerbit": "Erlangga",
+            "penulis": "Ayuk Ratna Puspaningsih, Elizabeth Tjahjadarmawan, Niken Resminingpuri Krisdianti",
+            "tahun": "2021",
+            "penerbit": "Pusat Kurikulum dan Perbukuan - Badan Penelitian dan Pengembangan dan Perbukuan",
             "deskripsi": "Buku teks utama yang membahas dasar-dasar ekosistem, komponen biotik, dan abiotik secara umum.",
             "image_filename": "cover_ipa.png", 
             "pdf_filename": "buku_ipa.pdf" 
         },
         {
-            "judul": "Ekologi Lahan Basah Kalimantan",
+            "judul": "Buku Ajar Pengantar Lahan Basah",
             "kategori": "Referensi Lahan Basah",
-            "penulis": "Pusat Studi Lingkungan ULM",
-            "tahun": "2020",
-            "penerbit": "Lambung Mangkurat Press",
+            "penulis": "Kissinger, Gusti Muhammad Hatta, Moch.Arief Soendjoto, Zainal Abidin",
+            "tahun": "2023",
+            "penerbit": "CV Banyubening Cipta Sejahtera",
             "deskripsi": "Panduan lengkap mengenai flora dan fauna endemik di rawa gambut Kalimantan Selatan.",
             "image_filename": "cover_lahan_basah.png",
             "pdf_filename": "buku_lahan_basah.pdf"
@@ -1144,9 +1160,9 @@ def referensi_view(request):
         {
             "judul": "Modul Ajar EkoSphere",
             "kategori": "Modul Pembelajaran",
-            "penulis": "Tim Pengembang",
+            "penulis": "Muhammad Dimas Aditya, Muhammad Farros Shofiy",
             "tahun": "2025",
-            "penerbit": "FKIP ULM",
+            "penerbit": "PILKOM 2023 FKIP ULM",
             "deskripsi": "Modul interaktif khusus yang dirancang untuk menemani pembelajaran di website EkoSphere.",
             "image_filename": "cover_modul.png",
             "pdf_filename": "modul_ekosphere.pdf"
