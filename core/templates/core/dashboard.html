@@ -26,46 +26,53 @@
         height: 100%;
         border: none;
         position: relative;
-        overflow: hidden; /* Pastikan isi tidak keluar radius */
-        border-radius: 10px; /* Konsisten dengan gambar */
+        overflow: hidden;
+        background-color: #fff;
     }
     .arena-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
     }
+    
+    /* =================================
+    PERBAIKAN GAMBAR ARENA 
+    =================================
+    */
     .arena-card-img {
-        height: 120px; /* Sesuaikan tinggi gambar agar proporsional */
+        height: 140px; /* Sedikit dipertinggi agar proporsional */
         width: 100%;
-        object-fit: cover;
+        object-fit: cover; /* Tetap cover agar rapi, tapi container disesuaikan */
         border-radius: 10px 10px 0 0;
     }
     
-    /* Gaya Kartu Terkunci (DIPERBAIKI) */
+    /* Gaya Kartu Terkunci */
     .arena-card.locked {
-        opacity: 0.9; /* Sedikit transparan tapi gambar tetap jelas */
+        cursor: not-allowed;
+    }
+    .arena-card.locked .arena-card-img {
+        filter: grayscale(100%); /* Hitam putih untuk efek terkunci */
+        opacity: 0.7;
     }
     .arena-card.locked:hover {
         transform: none;
         box-shadow: none !important;
-        cursor: not-allowed;
     }
     
-    /* Overlay Gembok (DIPERBAIKI) */
+    /* Overlay Gembok */
     .lock-overlay {
         position: absolute;
         top: 0; 
         left: 0; 
         width: 100%; 
-        height: 120px; /* Samakan dengan tinggi .arena-card-img */
-        background: rgba(0, 0, 0, 0.4); /* Hitam transparan */
+        height: 140px; /* Samakan dengan tinggi gambar */
+        background: rgba(0, 0, 0, 0.4); /* Overlay gelap transparan */
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 10px 10px 0 0;
         color: white;
-        font-size: 2.5rem;
+        font-size: 3rem;
         z-index: 10;
-        backdrop-filter: blur(2px); /* Efek blur sedikit pada gambar di belakang gembok */
     }
 </style>
 
@@ -239,7 +246,7 @@
                     {% endif %}
                 </div>
 
-                 <div class="col">
+                <div class="col">
                     {% if arena_status.interaksi.locked %}
                         <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.interaksi.materi_judul }}', '{{ arena_status.interaksi.materi_pk }}')">
                             <div class="position-relative">
@@ -291,7 +298,8 @@
 
             </div>
         </div>
-        </div>
+
+    </div>
     
     <div class="col-lg-5 mb-4 d-flex flex-column">
         
@@ -368,59 +376,119 @@
                         </button>
                     </li>
                 </ul>
-                <a href="{% url 'progres' %}" class="text-decoration-none small fw-bold">Detail ></a>
+                <a href="{% url 'progres' %}" class="text-decoration-none small fw-bold text-secondary">
+                    Detail <i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i>
+                </a>
             </div>
-            <div class="card-body p-0">
+            
+            <div class="card-body pt-3">
                 <div class="tab-content" id="progressTabContent">
+                    
                     <div class="tab-pane fade show active" id="lencana" role="tabpanel">
-                        <ul class="list-group list-group-flush">
-                            {% for lencana in profil_siswa.lencana.all %}
-                            <li class="list-group-item d-flex align-items-center border-0 py-2">
-                                <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" width="50" class="me-3">
-                                <span class="small">
-                                    <strong>{{ lencana.nama }}</strong>
-                                </span>
-                            </li>
-                            {% empty %}
-                            <li class="list-group-item text-muted text-center py-4 small">Belum ada lencana.</li>
-                            {% endfor %}
-                        </ul>
+                        {% if profil_siswa.lencana.all %}
+                            <div class="d-flex flex-wrap justify-content-start gap-2">
+                                {% for lencana in profil_siswa.lencana.all|slice:":4" %} 
+                                <div class="text-center p-2 rounded bg-light border" style="width: 70px;" title="{{ lencana.nama }}">
+                                    <img src="{{ lencana.gambar_url }}" alt="{{ lencana.nama }}" style="width: 40px; height: 40px; object-fit: contain;">
+                                    <small class="d-block text-truncate mt-1 text-muted" style="font-size: 0.65rem;">{{ lencana.nama }}</small>
+                                </div>
+                                {% endfor %}
+                                
+                                {% if profil_siswa.lencana.count > 4 %}
+                                <div class="text-center p-2 rounded bg-light border d-flex align-items-center justify-content-center" style="width: 70px; cursor: pointer;" onclick="window.location.href='{% url 'progres' %}'">
+                                    <span class="text-muted fw-bold small">+{{ profil_siswa.lencana.count|add:"-4" }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-award display-6 d-block mb-2 opacity-50"></i>
+                                <small>Belum ada lencana.</small>
+                            </div>
+                        {% endif %}
                     </div>
+
                     <div class="tab-pane fade" id="riwayat" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0 align-middle">
-                                <thead class="table-light">
-                                    <tr><th class="ps-3 small">Kuis</th><th class="text-end pe-3 small">Skor</th></tr>
-                                </thead>
-                                <tbody>
-                                    {% for hasil in hasil_kuis_list %}
-                                    <tr>
-                                        <td class="ps-3 small">{{ hasil.kuis.judul|truncatechars:15 }}</td>
-                                        <td class="text-end pe-3"><span class="badge {% if hasil.skor >= 75 %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ hasil.skor|floatformat:0 }}</span></td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="2" class="text-center text-muted py-3 small">Kosong.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                        {% if hasil_kuis_list %}
+                            <div class="list-group list-group-flush">
+                                {% for hasil in hasil_kuis_list|slice:":4" %}
+                                <div class="list-group-item px-0 py-2 border-bottom-0 d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center overflow-hidden me-2">
+                                        {% if hasil.skor >= 75 %}
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-exclamation-circle-fill text-warning me-2"></i>
+                                        {% endif %}
+                                        <span class="text-truncate small text-dark fw-medium" style="max-width: 140px;">{{ hasil.kuis.judul }}</span>
+                                    </div>
+                                    <span class="badge rounded-pill {% if hasil.skor >= 75 %}bg-success bg-opacity-10 text-success{% else %}bg-warning bg-opacity-10 text-dark{% endif %}">
+                                        {{ hasil.skor|floatformat:0 }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if hasil_kuis_list.count > 4 %}
+                                <div class="text-center mt-2 border-top pt-2">
+                                    <a href="{% url 'progres' %}" class="small text-muted text-decoration-none">Lihat Semua Riwayat</a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-clipboard-x display-6 d-block mb-2 opacity-50"></i>
+                                <small>Belum ada riwayat kuis.</small>
+                            </div>
+                        {% endif %}
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="lockedArenaModal" tabindex="-1" aria-labelledby="lockedArenaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-secondary text-white border-0">
+        <h5 class="modal-title fw-bold" id="lockedArenaLabel"><i class="bi bi-lock-fill me-2"></i>Arena Terkunci</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="bi bi-exclamation-circle display-4 text-warning mb-3 d-block"></i>
+        <p class="fs-5 mb-2">Oops! Anda belum bisa mengakses arena ini.</p>
+        <p class="text-muted">Silakan selesaikan materi <strong><span id="modalMateriTitle"></span></strong> terlebih dahulu.</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pb-4">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Nanti Saja</button>
+        <a id="btnGoToMateri" href="#" class="btn btn-success px-4 fw-bold">
+            Buka Materi <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-    // Fungsi untuk menangani klik pada arena terkunci
+    // Fungsi untuk membuka Modal Terkunci
     function aksesTerkunci(judulMateri, pkMateri) {
-        if (confirm(`Arena ini terkunci. Anda harus menyelesaikan materi "${judulMateri}" terlebih dahulu. Apakah Anda ingin menuju materi tersebut sekarang?`)) {
-            if (pkMateri && pkMateri !== 'None') {
-                window.location.href = `/materi/${pkMateri}/`;
-            } else {
-                alert("Maaf, materi belum tersedia.");
-            }
+        const modalTitle = document.getElementById('modalMateriTitle');
+        const btnGoTo = document.getElementById('btnGoToMateri');
+        
+        // Set teks judul materi
+        modalTitle.innerText = judulMateri;
+        
+        // Set link tombol
+        if (pkMateri && pkMateri !== 'None') {
+            btnGoTo.href = `/materi/${pkMateri}/`;
+            btnGoTo.classList.remove('disabled');
+        } else {
+            btnGoTo.href = '#';
+            btnGoTo.classList.add('disabled');
         }
+        
+        // Tampilkan Modal
+        var myModal = new bootstrap.Modal(document.getElementById('lockedArenaModal'));
+        myModal.show();
     }
 </script>
 
