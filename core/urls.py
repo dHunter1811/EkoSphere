@@ -75,4 +75,6 @@ urlpatterns = [
     path('api/update-waktu/', views.api_update_waktu_view, name='api_update_waktu'),
 
     path('referensi/', views.referensi_view, name='referensi'),
+
+    path('tentang-kami/', views.about_view, name='about'), # <-- Tambahkan ini
 ]

@@ -1,62 +1,74 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="p-4 rounded" style="background-color: #f4f4f4;">
-        <h1 class="display-5 fw-bold">Dashboard Guru</h1>
-        <p class="fs-5">Selamat datang, {{ request.user.username }}. Analisis data progres siswa di bawah ini untuk memandu sesi tatap muka.</p>
+<div class="container-fluid mt-4 mb-5">
+    <div class="p-4 rounded-3 shadow-sm mb-4 text-white" style="background: linear-gradient(135deg, #198754 0%, #20c997 100%);">
+        <h1 class="display-5 fw-bold"><i class="bi bi-speedometer2 me-2"></i> Dashboard Guru</h1>
+        <p class="fs-5 mb-0">Selamat datang, {{ request.user.username }}. Analisis data progres siswa untuk memandu sesi tatap muka.</p>
     </div>
 
-    <div class="row mt-4">
+    <div class="row g-4">
+        
         <div class="col-lg-8">
             
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">🧠 Peta Kesulitan Konsep</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h5 class="mb-0 fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Peta Kesulitan Konsep</h5>
+                    <p class="text-muted small mb-0">5 pertanyaan dengan tingkat kesalahan tertinggi.</p>
                 </div>
                 <div class="card-body">
-                    <p class="card-text text-muted small">Grafik 5 pertanyaan dengan tingkat kesalahan tertinggi di kelas.</p>
                     <ul class="list-group list-group-flush">
                         {% for soal in peta_kesulitan %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ soal.teks_pertanyaan }}</span>
-                                <span class="badge bg-danger rounded-pill">{{ soal.persentase_salah }}% Salah</span>
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom">
+                                <span class="fw-medium">{{ soal.teks_pertanyaan }}</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                                    {{ soal.persentase_salah }}% Salah
+                                </span>
                             </li>
                         {% empty %}
-                            <li class="list-group-item text-muted">Belum ada data jawaban salah dari siswa.</li>
+                            <li class="list-group-item text-center text-muted py-4 border-0">Belum ada data kesalahan yang signifikan.</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">🧑‍🎓 Identifikasi Siswa</h5>
+
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-people-fill me-2"></i> Identifikasi Siswa</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-success">🏆 Siswa Berprestasi</h6>
+                    <div class="row g-4">
+                        <div class="col-md-6 border-end">
+                            <h6 class="text-success fw-bold mb-3"><i class="bi bi-trophy me-2"></i> Top Performa</h6>
                             <ul class="list-group list-group-flush">
                                 {% for profil in siswa_berprestasi %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                                    <a href="{% url 'detail_siswa' profil.user.id %}" class="text-decoration-none text-dark fw-bold d-flex align-items-center">
+                                        <img src="{% static 'images/default_avatar.png' %}" alt="Avatar" class="rounded-circle me-2" width="30" height="30">
+                                        {{ profil.user.username }}
+                                    </a>
                                     <span class="badge bg-success rounded-pill">{{ profil.total_poin }} Poin</span>
                                 </li>
                                 {% empty %}
-                                <li class="list-group-item text-muted">Belum ada siswa yang mendapatkan poin.</li>
+                                <li class="list-group-item text-muted small px-0">Belum ada data.</li>
                                 {% endfor %}
                             </ul>
                         </div>
+                        
                         <div class="col-md-6">
-                            <h6 class="text-danger">⚠️ Perlu Perhatian</h6>
+                            <h6 class="text-danger fw-bold mb-3"><i class="bi bi-heart-pulse me-2"></i> Perlu Bimbingan</h6>
                             <ul class="list-group list-group-flush">
                                 {% for profil in siswa_perlu_perhatian %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
+                                    <a href="{% url 'detail_siswa' profil.user.id %}" class="text-decoration-none text-dark fw-bold d-flex align-items-center">
+                                        <img src="{% static 'images/default_avatar.png' %}" alt="Avatar" class="rounded-circle me-2" width="30" height="30">
+                                        {{ profil.user.username }}
+                                    </a>
                                     <span class="badge bg-danger rounded-pill">{{ profil.total_poin }} Poin</span>
                                 </li>
                                 {% empty %}
-                                <li class="list-group-item text-muted">Tidak ada siswa dengan poin rendah.</li>
+                                <li class="list-group-item text-muted small px-0">Semua siswa dalam performa baik.</li>
                                 {% endfor %}
                             </ul>
                         </div>
@@ -64,32 +76,48 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">📋 Daftar Siswa Kelas (Total: {{ total_siswa }})</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-list-ul me-2"></i> Daftar Siswa</h5>
+                    <span class="badge bg-light text-dark border">Total: {{ total_siswa }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                        <table class="table table-hover align-middle">
-                            <thead>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>Nama Siswa</th>
+                                    <th class="ps-4">Nama Siswa</th>
                                     <th>Total Poin</th>
-                                    <th>Lencana Diraih</th>
+                                    <th>Lencana</th>
+                                    <th class="text-end pe-4">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for profil in daftar_siswa_lengkap %}
                                 <tr>
-                                    <td>
-                                        <a href="{% url 'detail_siswa' profil.user.id %}">{{ profil.user.username }}</a>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-secondary bg-opacity-10 p-2 rounded-circle me-3 text-secondary">
+                                                <i class="bi bi-person"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ profil.user.username }}</span>
+                                        </div>
                                     </td>
-                                    <td>{{ profil.total_poin }}</td>
-                                    <td>{{ profil.lencana.count }}</td>
+                                    <td><span class="fw-bold text-success">{{ profil.total_poin }}</span></td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark rounded-pill">
+                                            {{ profil.lencana.count }} <i class="bi bi-award-fill"></i>
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="{% url 'detail_siswa' profil.user.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            Detail <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">Belum ada siswa yang terdaftar.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">Belum ada siswa yang terdaftar.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -102,67 +130,79 @@
 
         <div class="col-lg-4">
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">📊 Statistik Kinerja Kelas</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-line-fill me-2"></i> Kinerja Kelas</h5>
                 </div>
                 <div class="card-body">
-                    <h6 class="card-title">Penyelesaian Modul Rata-rata</h6>
-                    <div class="progress mb-3" style="height: 25px;">
-                        <div class="progress-bar" role="progressbar" style="width: {{ kpi_avg_completion }}%;" aria-valuenow="{{ kpi_avg_completion }}" aria-valuemin="0" aria-valuemax="100">{{ kpi_avg_completion }}%</div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted fw-bold">Penyelesaian Modul</span>
+                            <span class="small fw-bold text-primary">{{ kpi_avg_completion }}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ kpi_avg_completion }}%;" aria-valuenow="{{ kpi_avg_completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </div>
                     
-                    <h6 class="card-title">Siswa Aktif (7 Hari Terakhir)</h6>
-                    <p class="card-text fs-4 fw-bold">{{ kpi_siswa_aktif }}</Siswa></p>
+                    <div class="p-3 bg-light rounded-3 text-center">
+                        <h2 class="fw-bold text-dark mb-0">{{ kpi_siswa_aktif }}</h2>
+                        <small class="text-muted">Siswa Aktif (7 Hari Terakhir)</small>
+                    </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">📚 Progres Modul Kelas</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-journal-text me-2"></i> Progres Materi</h5>
                 </div>
                 <div class="card-body">
                     {% for modul in progres_modul_kelas %}
-                        <div class="mb-3">
-                            <label class="form-label small">{{ modul.nama_materi }}</label>
-                            <div class="progress" style="height: 20px;">
-                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ modul.persentase }}%;" aria-valuenow="{{ modul.persentase }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ modul.persentase }}%
-                                </div>
+                        <div class="mb-3 pb-3 border-bottom last-no-border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold text-dark text-truncate" style="max-width: 70%;">{{ modul.nama_materi }}</span>
+                                <span class="badge bg-info text-dark">{{ modul.persentase }}%</span>
                             </div>
-                            <small class="text-muted">{{ modul.label }}</small>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ modul.persentase }}%;"></div>
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">{{ modul.label }}</small>
                         </div>
                     {% empty %}
-                        <p class="text-muted">Belum ada materi yang dibuat.</p>
+                        <p class="text-muted text-center small">Belum ada materi.</p>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">📈 Performa Kuis Kelas</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clipboard-data me-2"></i> Rata-rata Kuis</h5>
                 </div>
                 <div class="card-body">
                     {% for kuis in analitik_kuis %}
                         <div class="mb-3">
-                            <label class="form-label small">{{ kuis.judul_kuis }}</small>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold text-truncate" style="max-width: 65%;">{{ kuis.judul_kuis }}</span>
+                                {% if kuis.rata_rata is not None %}
+                                    <span class="small fw-bold {% if kuis.rata_rata >= 75 %}text-success{% else %}text-warning{% endif %}">
+                                        {{ kuis.rata_rata }}
+                                    </span>
+                                {% else %}
+                                    <span class="small text-muted">-</span>
+                                {% endif %}
+                            </div>
                             {% if kuis.rata_rata is not None %}
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-warning text-dark" role="progressbar" style="width: {{ kuis.rata_rata }}%;" aria-valuenow="{{ kuis.rata_rata }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ kuis.rata_rata }}% (Rata-rata)
-                                    </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {% if kuis.rata_rata >= 75 %}bg-success{% else %}bg-warning{% endif %}" 
+                                         role="progressbar" style="width: {{ kuis.rata_rata }}%;"></div>
                                 </div>
-                                <small class="text-muted">{{ kuis.jumlah_pengerjaan }} siswa mengerjakan</small>
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ kuis.jumlah_pengerjaan }} pengerjaan</small>
                             {% else %}
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-light text-dark" role="progressbar" style="width: 100%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                        Belum ada pengerjaan
-                                    </div>
-                                </div>
+                                <small class="text-muted fst-italic" style="font-size: 0.75rem;">Belum ada data</small>
                             {% endif %}
                         </div>
                     {% empty %}
-                        <p class="text-muted">Belum ada kuis yang dibuat.</p>
+                        <p class="text-muted text-center small">Belum ada kuis.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -170,4 +210,13 @@
         </div>
     </div>
 </div>
+
+<img src="{% static 'images/default_avatar.png' %}" style="display:none;">
+
+<style>
+    .last-no-border:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
+    /* Efek Hover Halus untuk Baris Tabel */
+    tbody tr { transition: background-color 0.2s; }
+    tbody tr:hover { background-color: #f8f9fa; }
+</style>
 {% endblock %}

@@ -28,6 +28,8 @@
         position: relative;
         overflow: hidden;
         background-color: #fff;
+        display: flex;
+        flex-direction: column;
     }
     .arena-card:hover {
         transform: translateY(-5px);
@@ -35,14 +37,24 @@
     }
     
     /* =================================
-    PERBAIKAN GAMBAR ARENA 
+    PERBAIKAN GAMBAR ARENA (Fixed)
     =================================
     */
-    .arena-card-img {
-        height: 140px; /* Sedikit dipertinggi agar proporsional */
+    .arena-card-img-container {
+        position: relative;
         width: 100%;
-        object-fit: cover; /* Tetap cover agar rapi, tapi container disesuaikan */
+        padding-top: 60%; /* Aspect Ratio 5:3 (Landscape) agar gambar proporsional */
+        overflow: hidden;
         border-radius: 10px 10px 0 0;
+    }
+
+    .arena-card-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Memastikan gambar menutupi area tanpa gepeng */
     }
     
     /* Gaya Kartu Terkunci */
@@ -64,12 +76,11 @@
         top: 0; 
         left: 0; 
         width: 100%; 
-        height: 140px; /* Samakan dengan tinggi gambar */
+        height: 100%; /* Menutupi seluruh area gambar */
         background: rgba(0, 0, 0, 0.4); /* Overlay gelap transparan */
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px 10px 0 0;
         color: white;
         font-size: 3rem;
         z-index: 10;
@@ -79,7 +90,7 @@
 <div class="p-4 mb-4 bg-white rounded-3 shadow-sm text-dark">
     <div class="row align-items-center">
         <div class="col-md-7">
-            <h1 class="display-6 fw-bold mb-3">Selamat Datang di EkoSphere!</h1>
+            <h1 class="display-5 fw-bold mb-3">Selamat Datang di EkoSphere!</h1>
             <p class="fs-4 text-muted">Media Pembelajaran Interaktif untuk Ekosistem Lahan Basah.</p>
         </div>
         <div class="col-md-5 text-center text-md-end mt-3 mt-md-0">
@@ -199,7 +210,7 @@
                 <div class="col">
                     {% if arena_status.klasifikasi.locked %}
                         <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.klasifikasi.materi_judul }}', '{{ arena_status.klasifikasi.materi_pk }}')">
-                            <div class="position-relative">
+                            <div class="arena-card-img-container">
                                 <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
                                 <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
                             </div>
@@ -211,7 +222,9 @@
                         </div>
                     {% else %}
                         <div class="card shadow-sm arena-card h-100">
-                            <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
+                            <div class="arena-card-img-container">
+                                <img src="{% static 'images/cover_klasifikasi.png' %}" class="arena-card-img" alt="Klasifikasi">
+                            </div>
                             <div class="card-body p-3 d-flex flex-column">
                                 <h6 class="card-title fw-bold text-success small mb-1">Klasifikasi</h6>
                                 <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Biotik vs Abiotik.</p>
@@ -224,7 +237,7 @@
                 <div class="col">
                     {% if arena_status.interaksi.locked %}
                         <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.interaksi.materi_judul }}', '{{ arena_status.interaksi.materi_pk }}')">
-                            <div class="position-relative">
+                            <div class="arena-card-img-container">
                                 <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
                                 <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
                             </div>
@@ -236,7 +249,9 @@
                         </div>
                     {% else %}
                         <div class="card shadow-sm arena-card h-100">
-                            <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
+                            <div class="arena-card-img-container">
+                                <img src="{% static 'images/cover_simbiosis.png' %}" class="arena-card-img" alt="Simbiosis">
+                            </div>
                             <div class="card-body p-3 d-flex flex-column">
                                 <h6 class="card-title fw-bold text-warning small mb-1">Simbiosis</h6>
                                 <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Tebak hubungan.</p>
@@ -249,7 +264,7 @@
                 <div class="col">
                     {% if arena_status.interaksi.locked %}
                         <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.interaksi.materi_judul }}', '{{ arena_status.interaksi.materi_pk }}')">
-                            <div class="position-relative">
+                            <div class="arena-card-img-container">
                                 <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
                                 <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
                             </div>
@@ -261,7 +276,9 @@
                         </div>
                     {% else %}
                         <div class="card shadow-sm arena-card h-100">
-                            <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
+                            <div class="arena-card-img-container">
+                                <img src="{% static 'images/cover_predator.png' %}" class="arena-card-img" alt="Predator">
+                            </div>
                             <div class="card-body p-3 d-flex flex-column">
                                 <h6 class="card-title fw-bold text-danger small mb-1">Predator</h6>
                                 <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Pecahkan kasus.</p>
@@ -274,7 +291,7 @@
                 <div class="col">
                     {% if arena_status.energi.locked %}
                         <div class="card shadow-sm arena-card locked h-100" onclick="aksesTerkunci('{{ arena_status.energi.materi_judul }}', '{{ arena_status.energi.materi_pk }}')">
-                            <div class="position-relative">
+                            <div class="arena-card-img-container">
                                 <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
                                 <div class="lock-overlay"><i class="bi bi-lock-fill"></i></div>
                             </div>
@@ -286,7 +303,9 @@
                         </div>
                     {% else %}
                         <div class="card shadow-sm arena-card h-100">
-                            <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
+                            <div class="arena-card-img-container">
+                                <img src="{% static 'images/cover_energy.png' %}" class="arena-card-img" alt="Energi">
+                            </div>
                             <div class="card-body p-3 d-flex flex-column">
                                 <h6 class="card-title fw-bold text-info small mb-1">Energy Flow</h6>
                                 <p class="card-text text-muted small mb-2 flex-grow-1" style="font-size: 0.75rem;">Rantai makanan.</p>
@@ -443,6 +462,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -469,7 +489,7 @@
 </div>
 
 <script>
-    // Fungsi untuk membuka Modal Terkunci
+    // Fungsi untuk menangani klik pada arena terkunci
     function aksesTerkunci(judulMateri, pkMateri) {
         const modalTitle = document.getElementById('modalMateriTitle');
         const btnGoTo = document.getElementById('btnGoToMateri');

@@ -1173,3 +1173,7 @@ def referensi_view(request):
         "semua_buku": semua_buku,
     }
     return render(request, 'core/referensi.html', context)
+
+@login_required
+def about_view(request):
+    return render(request, 'core/about.html')

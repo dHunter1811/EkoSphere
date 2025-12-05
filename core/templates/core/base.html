@@ -85,6 +85,11 @@
                         {% endif %}
                         
                         <li><hr class="dropdown-divider"></li>
+                        
+                        <li><a class="dropdown-item" href="{% url 'about' %}"><i class="bi bi-info-circle me-2"></i>Tentang EkoSphere</a></li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        
                         <li>
                             <form action="{% url 'logout' %}" method="post" class="px-2">
                                 {% csrf_token %}
@@ -127,7 +132,6 @@
     <script>
         {% if user.is_authenticated %}
         document.addEventListener('DOMContentLoaded', function() {
-            
             function kirimHeartbeat() {
                 fetch("{% url 'api_update_waktu' %}", {
                     method: 'POST',
@@ -138,7 +142,6 @@
                     body: JSON.stringify({}) 
                 }).catch(err => console.log("Gagal update waktu:", err));
             }
-
             setInterval(kirimHeartbeat, 60000);
         });
         {% endif %}
