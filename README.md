@@ -5,8 +5,9 @@
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Completed-success?style=for-the-badge)
 
+<img style="border-radius: 25px;" width="636" height="280" alt="iconScale" src="https://github.com/user-attachments/assets/1050cdec-90e4-4876-8b82-f6c7885c6803" />
+
 > **Media Pembelajaran Biologi Kelas X SMA Berbasis Web dengan Topik Ekosistem Lahan Basah.**
-<img style="border-radius: 25px;" width="686" height="310" alt="iconScale" src="https://github.com/user-attachments/assets/1050cdec-90e4-4876-8b82-f6c7885c6803" />
 
 ---
 
